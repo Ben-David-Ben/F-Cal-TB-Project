@@ -6,11 +6,11 @@ Missions:
 
 - analizing the gap:
     1. compare the run around the gap with one around the center.
-        11. compare energies(amplitude)
-        12. compare hits amount
+        - compare energies(amplitude)
+        - compare hits amount
 
     2. compare the first plane with the latter planes
-        a. energies
-        b. hits    
+        - energies
+        - hits    
 
     3. with the telescope, find the energies and hits of each position around the gap
