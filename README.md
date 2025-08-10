@@ -9,5 +9,8 @@ for each run we have a ROOT file with the ttree. In it we have all the events ca
 
 Each event is marked with a TLU number (this is like an index)
 
-For each TLU(event) we have corresponding arrays - showing which pad(pixle) was activated, on which plane, and with what amplitud. 
-Hence for every event we have 1 TLU number and an array of all the hits.
+For each TLU(event) we have corresponding arrays - showing which pads(pixle) were activated, on which planes, and with what amplitudes(energy). 
+
+Hence for every event we have 1 TLU number and arrays of all the hits.
+
+deepest layer is numbered as 0 and goes up as we go to the first layers, 

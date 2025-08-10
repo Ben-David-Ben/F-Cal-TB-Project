@@ -14,3 +14,5 @@ Missions:
         - hits    
 
     3. with the telescope, find the energies and hits of each position around the gap
+
+    - is the first layer silicone or thungstane?
