@@ -1,6 +1,6 @@
 Missions:
 
-- find in the logbook the runs done for two towers with equvilent amount of layers.
+- find in the logbook the runs done for two towers with equvilent amount of layers around the gap.
 
 - schedule a talk with david
 
