@@ -10,7 +10,7 @@ Missions:
         12. compare hits amount
 
     2. compare the first plane with the latter planes
-        22. energies
-        23. hits    
+        a. energies
+        b. hits    
 
     3. with the telescope, find the energies and hits of each position around the gap
