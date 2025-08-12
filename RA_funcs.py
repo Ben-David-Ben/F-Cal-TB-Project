@@ -1,8 +1,5 @@
 # ROOT ANALYSIS FUNCTIONS
 
-import sys
-print(sys.executable)
-
 import awkward as ak
 import numpy as np
 import matplotlib.pylab as plt
@@ -10,6 +7,10 @@ import uproot
 import seaborn
 
 print("import work")
+
+
+
+
 
 
 # extractS arrays from ROOT file and zip them for every hit
