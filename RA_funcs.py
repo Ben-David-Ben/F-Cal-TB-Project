@@ -50,6 +50,31 @@ def get_ROOT_data_zip(file_name, tlu = "false", time = "false", toa = "false" ):
 
 
 
+
+# gets data and returns for a specific plane: pads_2d - the pads with signals in 2d coordinates ; counts- amount of hits on each pad
+def plane_hit_counts(hit_data, plane):
+    # get only the hits on the wanted plane
+    hits_plane = hit_data[hit_data.plane == plane]
+
+    # get only the channels data and clean the array from empty cells
+    clean_plane_ch = hits_plane.ch[ak.num(hits_plane.ch) > 0]
+
+    # count the amount of hits in each pad on the plane
+    pads_1d, counts = np.unique(ak.flatten(clean_plane_ch), axis=0, return_counts=True)
+
+    # convert the 1d index of the pads into 2d coordinates
+    pads_2d = divmod(pads_1d, 20)    
+
+    return pads_2d, counts
+
+
+
+
+
+
+
+
+
 # a colormap with the AMOUNT OF HITS in every channel(pad) of the chosen plane
 def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
       
@@ -87,6 +112,13 @@ def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 
 
 
+
+
+
+
+
+
+
 # a colormap with the total AMPLITUDE of hits in every channel(pad) of the chosen plane
 def hits_amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 
@@ -114,6 +146,12 @@ def hits_amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
     seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Counts'})
     plt.title(f'Total Amplitude in Each Channel, Plane {plane_number}')
     plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
+
+
+
+
+
+
 
 
 
@@ -209,3 +247,11 @@ def single_event_evolution(hit_data, TLU_number, cmap="berlin"):
         plt.title(f'Number of Hits in each channel, plane {7-plane}')
         plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
         plt.show()
+
+
+
+
+
+
+
+
