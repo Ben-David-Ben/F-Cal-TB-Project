@@ -163,7 +163,7 @@ def hits_amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 
 
 
-# show the average amplitude of each pad
+# show the average amplitude of the entire run in each pad
 def average_amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 
     # get only the hits on the wanted plane
@@ -254,4 +254,57 @@ def single_event_evolution(hit_data, TLU_number, cmap="berlin"):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Shows the shower evolution of a SINGLE EVENT in the sensor with the amplitude in every sensor
+def single_event_evolution_amp(hit_data, TLU_number, cmap="berlin"):
+
+    # get the path of the specific event
+    TLU_event_data = hit_data[TLU_number]
+
+    
+    # count the amount of hits of each pad in every plane
+    for plane in range(7,-1,-1):
+        
+        # get the channels hits on the wanted plane
+        hits_plane = TLU_event_data[TLU_event_data.plane == plane]
+        hits_plane_ch = TLU_event_data[TLU_event_data.plane == plane].ch
+
+        # create channel(pads) matrix
+        counts_matrix = np.zeros((13, 20))
+        
+        # modify the pads matrix only if there are any hits on the plane
+        if len(hits_plane_ch) != 0:
+            # count the amount of hits in each pad on the plane
+            pads_1d, counts = np.unique(hits_plane_ch, return_counts=True)
+
+            # convert the 1d index of the pads into 2d coordinates
+            pads_2d = divmod(pads_1d, 20)    
+    
+            # distribute the counts for each pad on a 12x20 matrix
+            counts_matrix = np.zeros((13, 20))
+            for i in range(len(pads_1d)):
+                q = pads_2d[0][i]           # quotinent of the i'th pad (row from bottom)
+                r = pads_2d[1][i]           # remainder of the i'th pad (column)
+                pad_amp = hits_plane[hits_plane.ch == pads_1d[i]].amp
+                counts_matrix[-1-q][r] = pad_amp[0]
+                
+        # creat the colormap
+        plt.figure(figsize=(10, 8))
+        seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Counts'}, annot=True, fmt=".0f")
+        plt.title(f'Number of Hits in each channel, plane {7-plane}')
+        plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
+        # plt.gca().invert_yaxis()
+        plt.show()
 
