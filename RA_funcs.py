@@ -14,18 +14,18 @@ print("imports work")
 
 
 
-# extractS arrays from ROOT file and zip them for every hit
+# extracts arrays from ROOT file and zip them for every hit
 def get_ROOT_data_zip(file_name, tlu = "false", time = "false", toa = "false" ):
 
     # open the file
     infile = uproot.open(file_name)
-    print("Folders:", infile.keys())
-    print()
+    # print("Folders:", infile.keys())
+
 
     # open the first "folder" hits
     hits = infile['Hits']
-    print("Hits:")
-    hits.show()
+    # print("Hits:")
+    # hits.show()
 
     # create the arrays from all data
     amp = hits['amplitude'].array()
@@ -40,6 +40,7 @@ def get_ROOT_data_zip(file_name, tlu = "false", time = "false", toa = "false" ):
 
     # create a zipped array of data for every hit(reading in the sensor)
     hit_data = ak.zip({ "plane":plane, "ch":channel, "amp":amp})
+    print(f"{file_name} finished")
 
     return hit_data
 
@@ -351,3 +352,141 @@ def single_event_evolution_amp(hit_data, TLU_number, cmap="berlin"):
         # plt.gca().invert_yaxis()
         plt.show()
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+# histogram of counts for each amp in a specific plane
+def amp_histo_single_plane(hit_data, plane):
+
+    # get the data of the wanted plane
+    hit_plane = hit_data[hit_data.plane == plane]
+
+    # create an array of only the amplitudes in the wanted plane
+    hit_plane_amp = hit_plane.amp
+
+    # create and plot an histo to count how many time did we get each amp
+    counts, bins, patches = plt.hist(ak.flatten(hit_plane_amp), bins=501, range=(0,500))
+    max_bin_index = np.argmax(counts)
+    peaks, _ = find_peaks(counts)
+    peak_x = (bins[peaks] + bins[peaks + 1]) / 2
+
+    # get the most common amp
+    max_bin_center = (bins[max_bin_index] + bins[max_bin_index + 1]) / 2
+    max_inputs = np.round(max_bin_center)
+
+    # plot settings
+    # plt.axvline(max_inputs, color='red', linestyle='--', label= max_inputs)
+    colors = ['green', 'blue', 'orange', 'purple']
+    for i, px in enumerate(peak_x[:len(colors)]):
+        plt.axvline(px, color=colors[i], linestyle='--', linewidth=1, label= np.round(px))
+    plt.legend()
+    plt.grid(which='major', linestyle='-', linewidth=0.7)
+    plt.grid(which='minor', linestyle=':', linewidth=0.5)
+    plt.minorticks_on()
+    plt.title(f'Amplitude of Hits, plane {plane}', fontsize=16)
+    plt.xlabel('Amplitude', fontsize=14)
+    plt.ylabel('Counts', fontsize=14)
+    plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Energy vs plane in a graph
+def average_amp_vs_plane(hit_data):
+
+    # total amount of events in the run(TLU's)
+    events = len(hit_data)
+
+    # list of planes
+    planes = np.arange(0,8,1)
+
+    # create a list of total energy(amp) for each plane
+    plane_avg_amp_list = []
+    run_avg_amp_list = []
+    plane_hits_amount_list = []
+
+    # get the amp for each plane
+    for plane in range(7,-1,-1):
+    
+        # get only the hits on the wanted plane
+        hits_plane_n = hit_data[hit_data.plane == plane]
+        hits_plane_n_amp = hits_plane_n.amp
+        clean_plane_n_amp = hits_plane_n_amp[ak.num(hits_plane_n_amp) > 0]
+
+        # counts the amplitude for every plane
+        plane_total_amp = ak.sum(clean_plane_n_amp)             # sum all the amplitudes
+
+        # get the average over all events in the run
+        run_avg_amp = plane_total_amp / events
+        run_avg_amp_list.append(run_avg_amp)
+
+        # get the average over all the hits in the specific plane
+        plane_avg_amp = plane_total_amp / len(clean_plane_n_amp)
+        plane_avg_amp_list.append(plane_avg_amp)
+
+        # total amount of hits in each plane
+        plane_hits_amount_list.append(len(clean_plane_n_amp))
+        print(f"amount of hits in plane {7 - plane}:", len(clean_plane_n_amp))
+
+    # plot
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+
+    # plot the averages for each plane
+    ax1.plot(planes, run_avg_amp_list, marker='o', label = "AMP over events in the run")
+    ax1.plot(planes, plane_avg_amp_list, marker='v', label = "AMP over hits in plane")
+    ax1.set_xlabel('Plane')
+    ax1.set_ylabel('AVG AMP')
+    ax1.set_title('AMP/total events for each plane')
+    ax1.grid(True)
+    ax1.legend()
+    
+    # show the amounnt of hits in each plane on a bar chart
+    ax2.bar(planes, plane_hits_amount_list, color='blue')
+    ax2.set_title('Amount of Hits in Each Plane')
+    ax2.set_xlabel('Planes')
+    ax2.set_ylabel('amount of hits')
+    ax2.grid(True)
+
+    plt.show()
+
+
+        
