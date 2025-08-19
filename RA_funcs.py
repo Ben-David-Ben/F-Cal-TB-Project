@@ -121,7 +121,7 @@ def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 
 
 # a colormap with the total AMPLITUDE of hits in every channel(pad) of the chosen plane
-def hits_amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
+def amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 
     # get only the hits on the wanted plane
     hits_plane_n = hit_data[hit_data.plane == plane_number]
@@ -165,7 +165,7 @@ def hits_amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 
 
 # show the average amplitude of the entire run in each pad
-def average_amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
+def average_amp_colormap_single_plane(hit_data, plane_number, cmap="managua"):
 
     # get only the hits on the wanted plane
     hits_plane_n = hit_data[hit_data.plane == plane_number]
@@ -197,6 +197,16 @@ def average_amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
     seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Amplitude'} , annot=True, fmt=".0f")
     plt.title(f'Number of Hits in each channel, plane {plane_number}')
     plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
+
+
+
+
+
+
+
+
+
+
 
 
 

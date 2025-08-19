@@ -13,4 +13,7 @@ For each TLU(event) we have corresponding arrays - showing which pads(pixle) wer
 
 Hence for every event we have 1 TLU number and arrays of all the hits.
 
-deepest layer is numbered as 0 and goes up as we go to the first layers, 
+deepest layer is numbered as 0 and goes up as we go to the first layers
+
+! when taking the values of a TB run for a specific plane, it gives an array of the same size of the total events number, with empty slots where we dont have any hits in the wanted plane.
+
