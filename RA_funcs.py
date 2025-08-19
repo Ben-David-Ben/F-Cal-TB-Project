@@ -5,8 +5,9 @@ import numpy as np
 import matplotlib.pylab as plt
 import uproot
 import seaborn
+from scipy.signal import find_peaks
 
-print("import work")
+print("imports work")
 
 
 
@@ -184,7 +185,7 @@ def average_amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
         pad_2d = divmod(l, 20)                               # coordinates of the pad on the matrix
         q = pad_2d[0]                                        # quotinent of the l'th pad (row from bottom)
         r = pad_2d[1]                                        # remainder of the l'th pad (column)
-        # Code that might raise an exception
+        # make sure we dont try to update the matrix with null value
         if len(plane_pad_amp) == 0:
             avg_amp_l = 0
         else:
@@ -192,7 +193,8 @@ def average_amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
         counts_matrix[-1-q][r] = avg_amp_l
         
     # creat the colormap
-    seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Counts'})
+    plt.figure(figsize=(10, 8))
+    seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Amplitude'} , annot=True, fmt=".0f")
     plt.title(f'Number of Hits in each channel, plane {plane_number}')
     plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
 
@@ -200,7 +202,38 @@ def average_amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 
 
 
+# histogram of amplitudes in first layers
+def amp_histo_single_plane(hit_data, plane):
 
+    # get the data of the wanted plane
+    hit_plane = hit_data[hit_data.plane == plane]
+
+    # create an array of only the amplitudes in the wanted plane
+    hit_plane_amp = hit_plane.amp
+
+    # create and plot an histo to count how many time did we get each amp
+    counts, bins, patches = plt.hist(ak.flatten(hit_plane_amp), bins=501, range=(0,500))
+    max_bin_index = np.argmax(counts)
+    peaks, _ = find_peaks(counts)
+    peak_x = (bins[peaks] + bins[peaks + 1]) / 2
+
+    # get the most common amp
+    max_bin_center = (bins[max_bin_index] + bins[max_bin_index + 1]) / 2
+    max_inputs = np.round(max_bin_center)
+
+    # plot settings
+    # plt.axvline(max_inputs, color='red', linestyle='--', label= max_inputs)
+    colors = ['green', 'blue', 'orange', 'purple']
+    for i, px in enumerate(peak_x[:len(colors)]):
+        plt.axvline(px, color=colors[i], linestyle='--', linewidth=1, label= np.round(px))
+    plt.legend()
+    plt.grid(which='major', linestyle='-', linewidth=0.7)
+    plt.grid(which='minor', linestyle=':', linewidth=0.5)
+    plt.minorticks_on()
+    plt.title(f'Amplitude of Hits, plane {plane}', fontsize=16)
+    plt.xlabel('Amplitude', fontsize=14)
+    plt.ylabel('Counts', fontsize=14)
+    plt.show()
 
 
 
@@ -302,7 +335,7 @@ def single_event_evolution_amp(hit_data, TLU_number, cmap="berlin"):
                 
         # creat the colormap
         plt.figure(figsize=(10, 8))
-        seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Counts'}, annot=True, fmt=".0f")
+        seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Amplitude'}, annot=True, fmt=".0f")
         plt.title(f'Number of Hits in each channel, plane {7-plane}')
         plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
         # plt.gca().invert_yaxis()
