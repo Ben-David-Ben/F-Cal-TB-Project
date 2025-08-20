@@ -77,7 +77,7 @@ def plane_hit_counts(hit_data, plane):
 
 
 
-# a colormap with the AMOUNT OF HITS in every channel(pad) of the chosen plane
+# a colormap with the AMOUNT OF HITS in every channel(pad) of a chosen plane
 def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
       
     
@@ -246,7 +246,7 @@ def single_event_evolution_amp(hit_data, TLU_number, cmap="berlin"):
         # create channel(pads) matrix
         counts_matrix = np.zeros((13, 20))
         
-        # modify the pads matrix only if there are any hits on the plane
+        # update the pads matrix only if there are any hits on the plane
         if len(hits_plane_ch) != 0:
             # count the amount of hits in each pad on the plane
             pads_1d, counts = np.unique(hits_plane_ch, return_counts=True)
@@ -269,6 +269,15 @@ def single_event_evolution_amp(hit_data, TLU_number, cmap="berlin"):
         plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
         # plt.gca().invert_yaxis()
         plt.show()
+
+
+
+
+
+
+
+
+
 
 
 
@@ -382,7 +391,7 @@ def average_amp_vs_plane(hit_data):
         plane_avg_amp_list.append(plane_avg_amp)
 
         # total amount of hits in each plane
-        plane_hits_amount_list.append(len(clean_plane_n_amp))
+        plane_hits_amount_list.append(len(ak.flatten(clean_plane_n_amp)))
         print(f"amount of hits in plane {7 - plane}:", len(clean_plane_n_amp))
 
     # plot
