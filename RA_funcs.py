@@ -417,3 +417,86 @@ def average_amp_vs_plane(hit_data):
 
 
         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# plot the percentage of events with readings only after a specific plane.
+def plot_empty_first_planes(hit_data):
+
+    total_amount_of_events = len(hit_data)
+    first_occupied_plane_list = list(range(7,-1,-1))
+    number_of_events_list = []
+    percentage_of_events_list = []
+
+    
+    for occupied_plane in range(7,-1,-1):
+
+        # start filltering the data plane by plane until we get to the first occupied plane
+        filtered_events = hit_data
+
+        # repeat choosing the events with the following planes being empty until we reach the wanted amount of empty first planes
+        empty_plane = 7
+        while empty_plane > occupied_plane:
+            filtered_events = filtered_events[ak.all(filtered_events.plane != empty_plane, axis=1)]
+            empty_plane -= 1
+
+        # from the filtered data, take only the events with the next plane being non empty
+        hits_plane = filtered_events[filtered_events.plane == occupied_plane]
+        hits_plane_clean = hits_plane[ak.num(hits_plane) > 0]
+        
+        # count the amount of events with the wanted first occupied plane
+        number_of_events_plane = len(hits_plane_clean)
+        number_of_events_list.append(number_of_events_plane)
+
+        # find the percentage it makes of the total amount of events
+        percent_of_events_plane = (number_of_events_plane / total_amount_of_events) * 100
+        percentage_of_events_list.append(percent_of_events_plane)
+
+    print("total percentage of events:", sum(percentage_of_events_list))
+
+
+
+    # plot the data
+    # plt.plot(empty_planes_list, amount_of_events_list, marker='o')
+    bar_container = plt.bar(first_occupied_plane_list, percentage_of_events_list, color = "red")
+    plt.bar_label(bar_container,  fmt='{:,.2f}')
+    plt.xlabel('First Occupied Plane')
+    plt.ylabel('Percentage of Events (%)')
+    plt.title('The Percent of Events of First Occupied Planes')
+    plt.grid(True)
+    plt.legend()
+    
+
+
+
+    # plt.bar(first_occupied_plane_list, percentage_of_events_list, color='pink')
+
+
+    
+
