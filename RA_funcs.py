@@ -348,7 +348,44 @@ def amp_histo_single_plane(hit_data, plane):
 
 
 
+# histogram of counts for the total amp of an event in a specific plane
+def amp_histo_single_plane_total_event(hit_data, plane):
 
+    # change index so that the first plane is 0 and the last is 7
+    plane = 7 - plane
+
+    # get the data of the wanted plane
+    hit_plane = hit_data[hit_data.plane == plane]
+
+    # create an array of only the amplitudes in the wanted plane
+    hit_plane_amp = hit_plane.amp
+    hit_plane_amp_clean = hit_plane_amp[ak.num(hit_plane_amp) > 0]
+    sum_plane_amp = ak.sum(hit_plane_amp_clean, axis = 1)
+
+
+    # create and plot an histo to count how many time did we get each amp
+    counts, bins, patches = plt.hist(sum_plane_amp, bins=501, range=(0,500))
+    max_bin_index = np.argmax(counts)
+    peaks, _ = find_peaks(counts, prominence = 200)
+    peak_x = (bins[peaks] + bins[peaks + 1]) / 2
+
+    # get the most common amp
+    max_bin_center = (bins[max_bin_index] + bins[max_bin_index + 1]) / 2
+    max_inputs = np.round(max_bin_center)
+
+    # plot settings
+    # plt.axvline(max_inputs, color='red', linestyle='--', label= max_inputs)
+    colors = ['green', 'blue', 'orange', 'purple', 'pink']
+    for i, px in enumerate(peak_x[:len(colors)]):
+        plt.axvline(px, color=colors[i], linestyle='--', linewidth=1, label= np.round(px))
+    plt.legend()
+    plt.grid(which='major', linestyle='-', linewidth=0.7)
+    plt.grid(which='minor', linestyle=':', linewidth=0.5)
+    plt.minorticks_on()
+    plt.title(f'Amplitude of Hits Counter, plane {7 - plane}', fontsize=16)
+    plt.xlabel('Amplitude', fontsize=14)
+    plt.ylabel('Counts', fontsize=14)
+    plt.show()
 
 
 
