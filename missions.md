@@ -19,3 +19,5 @@ Missions:
 
 
 - make a histogram of the first plane amplitudes
+
+- sync ndex
