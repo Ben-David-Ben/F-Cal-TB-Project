@@ -15,8 +15,9 @@ print("imports work")
 
 
 # extracts arrays from ROOT file and zip them for every hit
-def get_ROOT_data_zip(file_name, tlu = "false", time = "false", toa = "false" ):
+def get_ROOT_data_zip(run_number, tlu = "false", time = "false", toa = "false" ):
 
+    file_name = f"TB_FIRE\{run_number}"
     # open the file
     infile = uproot.open(file_name)
     # print("Folders:", infile.keys())
