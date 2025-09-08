@@ -41,7 +41,7 @@ def get_ROOT_data_zip(run_number, tlu = "false", time = "false", toa = "false" )
 
     # create a zipped array of data for every hit(reading in the sensor)
     hit_data = ak.zip({ "plane":plane, "ch":channel, "amp":amp})
-    print(f"{file_name} finished")
+    print(f"{run_number} finished")
 
     return hit_data
 
@@ -541,7 +541,7 @@ def plot_empty_first_planes(hit_data):
     plt.ylabel('Percentage of Events (%)')
     plt.title('The Percent of Events VS Number of First Empty Planes')
     plt.grid(True)
-    plt.legend()
+    # plt.legend()
     
 
 
