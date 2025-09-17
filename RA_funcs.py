@@ -17,7 +17,7 @@ print("imports work")
 # extracts arrays from ROOT file and zip them for every hit
 def get_ROOT_data_zip(run_number, tlu = "false", time = "false", toa = "false" ):
 
-    file_name = f"TB_FIRE\{run_number}"
+    file_name = f"TB_FIRE\\{run_number}"
     # open the file
     infile = uproot.open(file_name)
     # print("Folders:", infile.keys())
@@ -112,7 +112,10 @@ def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 
 
 
-     
+
+
+
+
 
 
 
@@ -240,7 +243,7 @@ def average_amp_colormap_single_plane(hit_data, plane_number, cmap="managua"):
 
 
 # Shows the shower evolution of a SINGLE EVENT in the sensor with the amplitude in every sensor
-def single_event_evolution_amp(hit_data, TLU_number, cmap="berlin"):
+def single_event_evolution_amp(hit_data, TLU_number, cmap="berlin", save = "false"):
 
     # get the path of the specific event
     TLU_event_data = hit_data[TLU_number]
@@ -278,6 +281,11 @@ def single_event_evolution_amp(hit_data, TLU_number, cmap="berlin"):
         plt.title(f'Amplitude in Each Channel, plane {7-plane}')
         plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
         # plt.gca().invert_yaxis()
+
+        # save the plot 
+        if save != "false":
+            save_path = f"Plots\\TB2025 Gap\\run {save}\\ evolution of event{TLU_number} plane {7-plane}"
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.show()
 
 
