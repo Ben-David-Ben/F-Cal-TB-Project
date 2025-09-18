@@ -615,7 +615,7 @@ def ak_groupby(classes, data, round = "true"):
 
 
 # Shower energy for different initial X positions of the shower
-def energy_per_plane_vs_X_position(hit_data_1101):
+def event_shower_energy_vs_X_position(hit_data_1101):
     
     # get only showers starting at the first plane to identify the initial location
     plane_7 = hit_data_1101[hit_data_1101.plane == 7]
