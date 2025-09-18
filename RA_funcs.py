@@ -11,6 +11,8 @@ print("imports work")
 
 
 
+"Run Analysis - location, energy histogram etc"
+
 
 
 
@@ -407,7 +409,7 @@ def amp_histo_single_plane_total_event(hit_data, plane):
 
 
 
-
+"Shower Properties - avg energy per plane, Shower initiation plane"
 
 
 
@@ -495,15 +497,6 @@ def average_amp_vs_plane(hit_data):
 
 
 
-
-
-
-
-
-
-
-
-
 # plot the percentage of events with readings only after a specific plane.
 def plot_empty_first_planes(hit_data):
 
@@ -551,11 +544,130 @@ def plot_empty_first_planes(hit_data):
     plt.grid(True)
     # plt.legend()
     
+    
 
 
 
-    # plt.bar(first_occupied_plane_list, percentage_of_events_list, color='pink')
 
 
     
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"Spatial dependence Analysis"
+
+
+
+# a function that get 2 arrays, and groups them by categories of the first 1, returns the grouped data, mean of data for each group, and the classes
+def ak_groupby(classes, data, round = "true"):
+    
+    # round the values
+    if round == "true":
+        classes = ak.round(classes)
+
+    # zip the arrays
+    zipped_arrays = ak.zip({ "classes":classes, "data":data})
+
+    # sort by classes
+    data_classes_sorted = zipped_arrays[ak.argsort(zipped_arrays.classes)]
+
+    # divide to subarrays by classes
+    lengths = ak.run_lengths(data_classes_sorted.classes)
+    data_by_class_divided = ak.unflatten(data_classes_sorted, lengths)
+
+    # get the classes list
+    reduced_classes = data_by_class_divided.classes[..., 0]
+
+    # get the mean of data from the same class
+    data_avg_per_location = ak.mean(data_by_class_divided.data, axis = 1)
+
+
+    # return data_by_class_divided 
+    return data_by_class_divided, data_avg_per_location, reduced_classes
+
+
+
+
+
+
+
+
+
+
+
+
+# Shower energy for different initial X positions of the shower
+def energy_per_plane_vs_X_position(hit_data_1101):
+    
+    # get only showers starting at the first plane to identify the initial location
+    plane_7 = hit_data_1101[hit_data_1101.plane == 7]
+    mask = ak.num(plane_7) > 0
+    first_plane_starting_events = hit_data_1101[mask]
+
+    # determine the initial location of the shower
+    # get the data on the first plane
+    plane_7_clean = plane_7[mask]
+    plane_7_channel = plane_7_clean.ch
+    # divide by x positions
+    y, x = divmod(plane_7_channel, 20) #y is the quontinent and is the row, x is the remainder and column
+    x_list = x.to_list()
+    x_ak = ak.Array(x_list)
+    x_avg = ak.mean(x_ak, axis = 1)
+    
+    # compute the shower energy for each event
+    hit_amp_array = first_plane_starting_events.amp
+    event_shower_amp_array = ak.sum(hit_amp_array, axis = 1)
+
+    # get the average shower energy for each X position
+    div, avg_amps, classes = ak_groupby(x_avg, event_shower_amp_array)
+
+
+    # plot
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    
+    # plot the energy avg per position vs the initial X position of the shower
+    ax1.plot(classes, avg_amps, marker='o')
+    ax1.set_xticks(np.arange(0, 20))
+    ax1.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
+    ax1.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
+    ax1.set_xlabel('X Position at Shower Initiation [Pad Column]')
+    ax1.set_ylabel('AVG Shower Energy')
+    ax1.set_title('Average Shower Energy vs Initial Location')
+
+    # show the amounnt of hits in each plane on a bar chart
+    bins = np.arange(-0.5, 20.5, 1) 
+    ax2.hist(x_avg, bins=bins, edgecolor='black', rwidth=0.8)
+    ax2.set_xticks(np.arange(0, 20))
+    ax2.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
+    ax2.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
+    ax2.set_xlabel('X Position [Pad Column]')
+    ax2.set_ylabel('amount of hits')
+    ax2.set_title('Amount of Events initiating in Each Column of the Sensor')
+    
+    plt.show()
+
+
+
+
+    
+
+
+    
