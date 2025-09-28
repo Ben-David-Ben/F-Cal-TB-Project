@@ -614,13 +614,50 @@ def ak_groupby(classes, data, round = "true"):
 
 
 
+
+
+def initial_X_position_DUT(hit_data):
+    
+    # get only showers starting at the first plane
+    plane_7 = hit_data[hit_data.plane == 7]
+    mask = ak.num(plane_7) > 0
+
+    # determine the initial location of the shower
+    
+    # get the channels data of the first plane
+    plane_7_clean = plane_7[mask]
+    plane_7_channel = plane_7_clean.ch
+    # convert to x positions
+    y, x = divmod(plane_7_channel, 20) #y is the quontinent and is the row, x is the remainder and column
+    # take the average of the positions
+    x_list = x.to_list()
+    x_ak = ak.Array(x_list)
+    x_avg = ak.mean(x_ak, axis = 1)
+
+    return x_avg
+    
+
+
+
+
+
+
+
+
+
+
 # Shower energy for different initial X positions of the shower
-def event_shower_energy_vs_X_position(hit_data_1101):
+def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false"):
     
     # get only showers starting at the first plane to identify the initial location
-    plane_7 = hit_data_1101[hit_data_1101.plane == 7]
-    mask = ak.num(plane_7) > 0
-    first_plane_starting_events = hit_data_1101[mask]
+    plane_7 = hit_data[hit_data.plane == 7]
+    if single_pad_only == "false":
+        mask = ak.num(plane_7) > 0
+
+    if single_pad_only == "true":
+        mask = ak.num(plane_7) == 1
+
+    first_plane_starting_events = hit_data[mask]
 
     # determine the initial location of the shower
     # get the data on the first plane
@@ -653,9 +690,10 @@ def event_shower_energy_vs_X_position(hit_data_1101):
     ax1.set_title('Average Shower Energy vs Initial Location')
 
     # show the amounnt of hits in each plane on a bar chart
-    bins = np.arange(-0.5, 20.5, 1) 
+    bins = np.arange(0, 21, 1) 
     ax2.hist(x_avg, bins=bins, edgecolor='black', rwidth=0.8)
-    ax2.set_xticks(np.arange(0, 20))
+    ax2.set_xticks(np.arange(0, 20) + 0.5)  # shift by 0.5
+    ax2.set_xticklabels(np.arange(0, 20)) 
     ax2.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
     ax2.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
     ax2.set_xlabel('X Position [Pad Column]')
@@ -663,11 +701,3 @@ def event_shower_energy_vs_X_position(hit_data_1101):
     ax2.set_title('Amount of Events initiating in Each Column of the Sensor')
     
     plt.show()
-
-
-
-
-    
-
-
-    
