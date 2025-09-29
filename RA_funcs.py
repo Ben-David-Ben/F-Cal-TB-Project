@@ -836,3 +836,107 @@ def avg_hit_amount_vs_plane_per_X_position(hit_data, number_of_highest_ocupied_c
     fig.suptitle("Average Amount of Hits in a Shower for Different Plane, for Events Initiating in Different Positions", fontsize=14)
     plt.show()
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# average ENERGY in a shower vs columns and planes
+def avg_ENERGY_vs_plane_per_X_position(hit_data, number_of_highest_ocupied_columns, print_energies = "false"):
+    
+    planes = np.arange(0,8)
+
+    # attach the positions to the data
+    positions = initial_X_position_DUT(hit_data)
+    plane_7 = hit_data[hit_data.plane == 7]
+    mask = ak.num(plane_7) > 0
+    events_starting_at_7 = hit_data[mask]
+    hit_data_positions = ak.zip({ "hits":events_starting_at_7, "positions":positions},depth_limit=1)
+    
+    # get the most ocupied columns
+    top_columns = columns_with_max_hits(hit_data, number_of_highest_ocupied_columns)
+    top_columns = np.sort(top_columns)
+    print(top_columns)
+
+    # array to store all the data of planes per column
+    total_avg_energy_planes = []
+
+    # create to plot figure
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    
+    for column in top_columns:
+        print(column)
+        # creat an array to store the average ENERGY in each plane
+        energy_plane_array = []
+
+        # get the data of events initiating in the wanted column
+        hit_data_column = hit_data_positions[(hit_data_positions.positions >= column) & (hit_data_positions.positions < column + 1)]
+
+
+        # find the amount of hits in a plane for the column and add to the array
+        for plane in planes:
+            plane = 7-plane #adjust index so the first plane is 0
+            hit_data_column_plane = hit_data_column.hits[hit_data_column.hits.plane == plane] # the events initiatin at the wanted column and a specific plane 
+            hit_data_column_plane = hit_data_column_plane[ak.num(hit_data_column_plane) > 0] # clean from empty entries
+            num_of_events_column_plane = len(hit_data_column_plane)
+            energy_column_plane = ak.sum(hit_data_column_plane.amp)
+            avg_shower_energy_of_event_column_plane = energy_column_plane / num_of_events_column_plane
+            energy_plane_array.append(avg_shower_energy_of_event_column_plane)
+
+        #  add the array of energies for a single column to the total data array.
+        total_avg_energy_planes.append(energy_plane_array)
+        
+        # print the energies per plane if needed
+        if print_energies == "true":
+            print(energy_plane_array)
+
+        # plot avg amount of hits per plane
+        ax1.plot(planes, energy_plane_array, label=f"X Position: {column} Column", marker=".")
+        ax1.grid(True, linestyle="--", alpha=0.7)
+        ax1.set_xlabel("Plane")
+        ax1.set_ylabel("Average Shower Energy")
+        ax1.set_title("Shower Energy of Hits in Each Plane")
+        ax1.legend()
+
+
+
+    
+    # plot avg amount of hits per position
+    total_avg_energy_columns = np.transpose(np.array(total_avg_energy_planes))
+    for plane in planes:
+        avg_energy_plane_column = total_avg_energy_columns[plane]
+        ax2.plot(top_columns, avg_energy_plane_column, label = f"Plane: {plane}", marker="D")
+        ax2.set_xlabel('Column')
+        ax2.set_ylabel('Average Shower Energy')
+        ax2.set_title('Shower Energy in Each Column')
+        ax2.grid(True)
+        ax2.legend()
+
+    fig.suptitle("Average Shower Energy for Different Planes, for Events Initiating in Different Positions", fontsize=14)
+    plt.show()
+
