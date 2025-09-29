@@ -721,6 +721,51 @@ def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false"):
 
 
 
+# get the k columns with the maximum amount of hits
+def columns_with_max_hits(hit_data, number_of_columns):
+
+    # get the initial x positions
+    x_avg = initial_X_position_DUT(hit_data)
+    # x_avg = ak.round(x_avg)
+
+    x_avg_np = ak.to_numpy(x_avg)
+
+    # Compute histogram for X positions
+    counts, bin_edges = np.histogram(x_avg, bins=np.arange(0, 21))
+
+    # get the positions with the highest entries
+    bins = np.arange(0, 20)
+
+    # Get indices that would sort counts descending
+    top_indices = np.argsort(-counts)[:number_of_columns]
+
+    # Get the corresponding bin numbers
+    top_bins = bins[top_indices]
+    top_counts = counts[top_indices]
+
+    return top_bins
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # average amount of hits in a shower vs columns and planes
 def avg_hit_amount_vs_plane_per_X_position(hit_data, number_of_highest_ocupied_columns):
