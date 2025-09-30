@@ -616,26 +616,41 @@ def ak_groupby(classes, data, round = "true"):
 
 
 
-def initial_X_position_DUT(hit_data):
+# determine the initial position of the shower (x,y)
+def initial_X_position_DUT(hit_data, return_y = "false"):
     
     # get only showers starting at the first plane
     plane_7 = hit_data[hit_data.plane == 7]
     mask = ak.num(plane_7) > 0
 
-    # determine the initial location of the shower
-    
     # get the channels data of the first plane
     plane_7_clean = plane_7[mask]
     plane_7_channel = plane_7_clean.ch
-    # convert to x positions
+    
+    # convert to x, y positions
     y, x = divmod(plane_7_channel, 20) #y is the quontinent and is the row, x is the remainder and column
-    # take the average of the positions
+    
+    # take the average of the X positions
     x_list = x.to_list()
     x_ak = ak.Array(x_list)
     x_avg = ak.mean(x_ak, axis = 1)
 
-    return x_avg
+    # take the average of the Y positions
+    if return_y == "true":
+        y_list = y.to_list()
+        y_ak = ak.Array(y_list)
+        y_avg = ak.mean(y_ak, axis = 1)
+        return x_avg, y_avg
+
+    else:
+        return x_avg
     
+
+
+
+
+
+
 
 
 
@@ -721,6 +736,15 @@ def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false"):
 
 
 
+
+
+
+
+
+
+
+
+
 # get the k columns with the maximum amount of hits
 def columns_with_max_hits(hit_data, number_of_columns):
 
@@ -745,6 +769,16 @@ def columns_with_max_hits(hit_data, number_of_columns):
 
     return top_bins
     
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -920,7 +954,7 @@ def avg_ENERGY_vs_plane_per_X_position(hit_data, number_of_highest_ocupied_colum
         ax1.grid(True, linestyle="--", alpha=0.7)
         ax1.set_xlabel("Plane")
         ax1.set_ylabel("Average Shower Energy")
-        ax1.set_title("Shower Energy of Hits in Each Plane")
+        ax1.set_title("Energy Distribution in the Sensor for Differrnt Columns")
         ax1.legend()
 
 
@@ -933,10 +967,70 @@ def avg_ENERGY_vs_plane_per_X_position(hit_data, number_of_highest_ocupied_colum
         ax2.plot(top_columns, avg_energy_plane_column, label = f"Plane: {plane}", marker="D")
         ax2.set_xlabel('Column')
         ax2.set_ylabel('Average Shower Energy')
-        ax2.set_title('Shower Energy in Each Column')
+        ax2.set_title('Plane Energy in Each Column')
         ax2.grid(True)
         ax2.legend()
 
     fig.suptitle("Average Shower Energy for Different Planes, for Events Initiating in Different Positions", fontsize=14)
     plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# returns only the events with one hit on the first plane, with a section of radius from the position in each hit
+def Radii_from_Initial_position(hit_data):
+    
+    # reduce data for events starting at 0 plane and acivated one pad only
+    plane_7 = hit_data[hit_data.plane == 7]
+    mask = ak.num(plane_7) == 1
+    first_plane_starting_events = hit_data[mask]
+
+    # get the initial position for each event
+    x_init, y_init =  initial_X_position_DUT(first_plane_starting_events, return_y = "true")
+
+    # find the (x,y) ch position for every hit 
+    y_pos, x_pos = divmod(first_plane_starting_events.ch, 20)
+    
+    # get the distances from the initial position
+    x_dist = x_pos - x_init
+    y_dist = y_pos - y_init
+
+    # get the radii
+    radii_squared = x_dist**2 + y_dist**2
+    radii = np.sqrt(radii_squared)
+
+    # add the radii section to the data
+    events_from_first_plane_with_Radii = ak.with_field(first_plane_starting_events, radii, "Distance")
+
+    return events_from_first_plane_with_Radii
 
