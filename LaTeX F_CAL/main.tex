@@ -1,0 +1,461 @@
+%\documentclass[numberedappendix,iop,12pt]{emulateapj}
+%\documentclass{report}
+\documentclass[11pt]{article}
+
+\usepackage{geometry}
+\usepackage{adjustbox }
+\usepackage{tikz}
+\usetikzlibrary{matrix}
+
+\geometry{a4paper, %total={172mm,257mm},
+left=20mm, top=20mm, right=20mm, bottom=20mm}
+
+\usepackage{graphicx}% Include figure files
+\graphicspath{{../Plots/TB2025 Gap/}}
+\usepackage{dcolumn}% Align table columns on decimal point
+\usepackage{bm}% bold math
+\usepackage{epsf}
+\usepackage{verbatim}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{appendix}
+\usepackage{color}
+\usepackage{soul}
+\usepackage{pdfpages}
+\usepackage{verbatim} % needed for comments
+%\usepackage[normalem]{ulem} % needed for strikeout font
+\usepackage{mathtools}
+%\usepackage{changes}
+\usepackage{amsfonts}
+\usepackage{tikz}
+\usepackage{relsize}
+\usepackage{natbib}
+%\usepackage{multicol}
+
+\usepackage{todonotes} % for comments
+\usepackage{pgffor}
+\usepackage{grffile}
+\usepackage{amssymb}
+\usepackage{subcaption}
+
+
+
+\usepackage{ dsfont }
+\usepackage[
+backend=biber,
+% style=alphabetic,
+style=numeric,
+sorting=ynt
+]{biblatex}
+
+\addbibresource{mybib.bib}
+
+
+
+
+% commands:
+
+\newcommand{\ben}[1]{\todo[inline,color=orange!20!white]{\textbf{Ben:} #1}}
+
+\newcommand{\gal}[1]{\todo[inline,color=green!20!white]{\textbf{Gal:} #1}}
+
+\newcommand{\ket}[1]{| #1 \rangle}
+\newcommand{\bra}[1]{\langle #1 |}
+\newcommand{\braket}[3][]{\langle #2 | #3 \rangle}
+
+
+
+
+\usepackage{natbib}
+\usepackage{tikz}
+\usepackage{xcolor}
+\definecolor{darkgreen}{rgb}{0.0,0.5,0.0}
+%\usepackage[colorlinks,citecolor=darkgreen,dvipdfm]{hyperref} % Works with LaTeX, links fail in dvi.
+% Add the next line only when strictly necessary, because it causes font bugs:
+\usepackage[colorlinks,citecolor=darkgreen]{hyperref} % Works with PDFLaTeX; use for arXiv and ShareLaTeX.
+
+\usepackage[makeroom]{cancel}
+
+
+\usepackage{hyperref}% http://ctan.org/pkg/hyperref
+\hypersetup{%
+  colorlinks = true,
+  linkcolor  = black
+}
+
+
+
+\newcommand{\DrawFig}[1]{{#1}}
+%\newcommand{\DrawFig}[1]{{}}
+
+
+\def\mybib#1{./#1}
+
+
+\newcommand{\cfixme}[1]{{\textcolor{red}{#1}}}
+% Turn fixme, Fixme, cfixme  off before submission, e.g.
+%\newcommand{\Fixme}[1]{{}}
+
+\newcommand{\Ben}[1]{{\textcolor{orange}{[#1]}}}
+
+
+\newcommand{\BoldA}[1]{{\textbf{\boldmath{#1}}}}
+\newcommand{\energain}{g}
+\newcommand{\zeroeqconst}{\zeta}
+\newcommand{\myPret}{P_{\tiny\text{ret}}}
+\newcommand{\mysiso}{s_{\tiny\text{iso}}}
+\newcommand{\myPesc}{P_{\tiny\text{esc}}}
+\newcommand{\RPWN}{R_{\mbox{\tiny PWN}}}
+\newcommand{\qdinf}{q_{\infty}}
+
+\newcommand{\aaps}{AAPS}
+
+\usepackage[utf8]{inputenc}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{document}
+
+
+\title{
+    \vspace{4.0cm}
+    \large{\bf{F-CAL LUXE}\\ \vspace{0.3cm}
+        {\large }
+        \vspace{2.0cm}
+    }
+}
+
+\author{Ben David Talmor   \\\\
+    Instructor: Prof. Halina Abramowicz, Prof. Yan Benhammou\\\\
+    Tel Aviv University, School of High Energy and Particle Physics}
+\date{2025}
+
+\maketitle
+
+\vspace{4.0cm}
+% \begin{abstract}
+% \end{abstract}
+
+
+
+
+
+
+\newpage
+\tableofcontents
+\newpage
+
+
+
+
+
+\section{Introduction}
+Particle physics has been studied for a long time and many of the known models today describe the behaviors of systems under no external fields, or weak fields which can be modeled by using perturbation theory and linear approximation.In LUXE, we study Quantum Electro Dynamics(QED) under strong external fields, where the behavior becomes non-perturbative. In this regime we investigate some special phenomena.
+
+One main goal of the LUXE experiment is to study the \textbf{nonlinear Compton (NLC) process} where an electron or positron absorbs n optical photons, $\gamma_L$, from laser background and converts them into a single, high-energy gamma photon.
+
+\begin{equation}
+    e^{\pm} + n \gamma_L \longrightarrow e^{\pm} + \gamma
+\end{equation}
+
+Another target of the LUXE experiment is the \textbf{nonlinear Breit-Wheeler process} where high energy photons produces an electron-positron pair.
+
+\begin{equation}
+    \gamma + n \gamma_L \longrightarrow e^+ + e^-
+\end{equation}
+
+To study this realm, we will experiment with high energy electron beam and high voltage lasers, the experiment system is built in collaboration with DESY where the electron accelerator is based.
+
+
+
+
+
+
+
+\section{Experiment System}
+
+
+
+A key operation for the experiment will be to capture the positrons created in the Breit-Wheeler process and determine their energies. To obtain this, we will use a sensor composed of layers of silicone semi conductors and Tungsten ($W_{74}$).
+The silicone is divided to channels connected to external voltage. when high energy charged particles interact with the silicone it causes an ionization and an electrical charge transmittance. by converting this charge into digital signal, we can learn the trajectory of a particle in the sensor by seeing which channels were creating the signal.
+The Tungsten, being a heavier material, is used in order to reduce the particles energy, as particles interact with it, they undergo an electromagnetic shower, in which they break down into more particles with lower momentum.the width of each tungsten layer is 3.3 mm  which results with the highest probability of the particle to create only two more particles.
+In our sensor we will have multiple such structures of silicone and Tungsten layers, which are referred to as \textbf{Towers}. The towers will be placed next to each other in order to cover the surface area needed to capture the positrons.
+\\ \\
+
+
+
+\section{Gap Between Towers}
+
+Between every two towers is a distance of \ben{check dist between towers} where we have a "blind spot" in the sensor. The goal of this section is to present how this blind spots affect the accuracy of the sensor.
+
+
+\subsection{Run 1101 (Off the Gap)}
+
+
+\begin{figure}[h!]
+    \centering
+    \foreach \i in {0,...,7}{
+            \begin{subfigure}{0.3\textwidth}
+                \includegraphics[width=\linewidth]{run 1101/run 1101 event 54106/single event amp plane \i.png}
+            \end{subfigure}
+        }
+
+    \caption{Shower of a single event, Run 1101, TLU 54106. Here each cell in the color map represents a channel in the layer of the sensor, and the presented numbers are the amplitude measured in the channel. The red dotted line marks the gap between the two towers, meaning that the right tower ends at the 11 column and the left starts at the 12 column. We see here a single electron hitting the zero plane, then it goes through the tungsten before hitting the first plane which reads 3 hits. The number of hits increases until plane 4 in this case and then starts to reduce, do to the loss of energy of the particles.}
+    \label{fig:seven_subfigs}
+\end{figure}
+
+
+
+
+
+
+\begin{figure}[h!]
+    \centering
+    % First subfigure
+    \begin{subfigure}{0.49\textwidth}
+        \includegraphics[width=\linewidth]{run 1101/hit count colormap plane 0.png}
+        \caption{First plane}
+    \end{subfigure}
+    \hfill
+    % Second subfigure
+    \begin{subfigure}{0.49\textwidth}
+        \includegraphics[width=\linewidth]{run 1101/hit count colormap plane 7.png}
+        \caption{Last plane}
+    \end{subfigure}
+    \caption{Number of hits for each channel in planes 0 (first) and 7 (last). Here we see the area where the electron beam was pointed to on the sensor, as well as the deviation from it. the difference between (a) and (b) shows the growth of particle number over the planes and also the growth of the surface area of the hits. both can be explained by the electro magnetic shower of the high energy electron in the tungsten}
+    \label{hit amount colormap}
+\end{figure}
+
+
+
+
+
+
+
+
+\begin{figure}[h!]
+    \centering
+    % First subfigure
+    \begin{subfigure}{0.49\textwidth}
+        \includegraphics[width=\linewidth]{run 1101/avg amp colormap plane 0.png}
+        \caption{First plane}
+    \end{subfigure}
+    \hfill
+    % Second subfigure
+    \begin{subfigure}{0.49\textwidth}
+        \includegraphics[width=\linewidth]{run 1101/avg amp colormap plane 7.png}
+        \caption{Last plane}
+    \end{subfigure}
+    \caption{Average amplitude in each channel, planes 0 (first) and 7 (last). the average was taken by the total amplitude of each channel, divided by the total amount of hits in the channel, for the specific plane. One can notice that for the channels at the area of the electron beam, the amplitudes at plane 7 are bigger than in plane 0, while on the channels located further, there is no significant change in the reading. It is important to state that there is a tungsten layer before the first silicone layer (plane 0) and this is may cause the scattering of electrons to reach the channels further from the electron beam area. however, most of the electron that reached this far lose more energy, and in average will stamp a lower amplitude than the ones in the beam area.}
+\end{figure}
+
+
+\ben{Check why there are readings on the first row of the left tower}
+
+
+
+
+
+
+
+
+
+
+
+The reason for the peaks in fig(\ref{amp histo plane 0 zoom}) can be explained by the Minimum Ionizing particle (MIP), where particles of high energy will cause a minimum amount of energy loss when passing through the silicone. The amount of lost energy in such case will be translated to a digital signal with amplitude of around 15 ADC. Since the electrons also undergo a shower in tungsten before reaching the first plane, the most probable outcomes are of either 1 particle leaving 1 MIP - around 15 amp or after multiplying in the shower we will have 2 leaving 2 MIP - 30 amp or 3 particles leaving 3 MIP - 45 amp. which explains the peaks at 17, 28 and 42.
+
+
+
+\begin{figure}[h]
+    \centering  \includegraphics[width=\linewidth]{run 1101/avg total amp for each plane.png}
+    \caption{Average amp in each plane. The blue plot describe the average amplitude over the total amount of events in the run (absolute average amp), showing how much energy did each plane read over the entire run. The orange plot shows the average amplitude over the amount of events read in the plane(relative average amp), this shows the average energy of each plane solely without comparing it to the other planes. We can on the right the amount of hits in each plane, as expected, it grows bigger as the particle goes deeper in the sensor, However, in plane 4 there was probably some malfunction in the sensor as we see a major drop in comparison to the other planes. As for the energies, we see that the average amp per plane grows bigger until plane 5 and then starts to descend. The absolute average amp behave similarly, except for plane 4 which have significantly less hits and therefore lower amplitude.}
+    \label{avg amp per plane run 1101}
+\end{figure}
+
+
+
+
+\begin{figure}[h]
+    \centering  \includegraphics[width=0.6\linewidth]{run 1101/percent of events with different numbers of empty first planes.png}
+    \caption{the percentage of events where the stated planes were the first ones to read data.}
+    \label{empty first planes run 1101}
+\end{figure}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\newpage
+\subsection{Run 1063 (On the Gap)}
+
+
+
+% \begin{figure}[h!]
+%     \centering
+%     \foreach \i in {0,...,7}{
+%         \begin{subfigure}{0.3\textwidth}
+%             \includegraphics[width=\linewidth]{plots/run 1063/evolution of event132119 plane \i.png}
+%         \end{subfigure}
+% }
+%     \caption{Shower of a single event, Run 1063, TLU 132,119. Each cell in the color map represents a channel in the layer of the sensor, and the presented numbers are the amplitude measured in the channel. The red dotted line marks the gap between the two towers, meaning that the right tower ends at the 11 column and the left starts at the 12 column. We see here a single electron hitting the zero plane, then it goes through the tungsten before hitting the first plane which reads 3 hits. The number of hits increases until plane 4 in this case and then starts to reduce, do to the loss of energy of the particles.}
+%     \label{fig:seven_subfigs}
+% \end{figure}
+
+
+
+
+
+
+\begin{figure}[h!]
+    \centering
+    % First subfigure
+    \begin{subfigure}{0.49\textwidth}
+        \includegraphics[width=\linewidth]{run 1063/hits colormap plane 0.png}
+        \caption{First plane}
+    \end{subfigure}
+    \hfill
+    % Second subfigure
+    \begin{subfigure}{0.49\textwidth}
+        \includegraphics[width=\linewidth]{run 1063/hits colormap plane 7.png}
+        \caption{Last plane}
+    \end{subfigure}
+    \caption{run 1063. Number of hits for each channel in planes 0 (first) and 7 (last). Here we see the area where the electron beam was pointed to on the sensor, as well as the deviation from it. the difference between (a) and (b) shows the growth of particle number over the planes and also the growth of the surface area of the hits, both can be explained by the electro magnetic shower of the high energy electron in the tungsten}
+    \label{hit amount colormap}
+\end{figure}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{figure}[h]
+    \centering  \includegraphics[width=0.6\linewidth]{run 1063/amp histho plane 0.png}
+    \caption{run 1063. Histogram of the amplitudes written in the first plane. the lines shows the peaks of the histogram}
+    \label{amp histo plane 0}
+\end{figure}
+
+
+
+The reason for the peaks in fig(\ref{amp histo plane 0 zoom}) can be explained by the Minimum Ionizing particle (MIP), where particles of high energy will cause a minimum amount of energy loss when passing through the silicone. The amount of lost energy in such case will be translated to a digital signal with amplitude of around 15 ADC. Since the electrons also undergo a shower in tungsten before reaching the first plane, the most probable outcomes are of either 1 particle leaving 1 MIP - around 15 amp or after multiplying in the shower we will have 2 leaving 2 MIP - 30 amp or 3 particles leaving 3 MIP - 45 amp. which explains the peaks at 17, 28 and 42.
+
+
+
+
+
+
+\begin{figure}[h]
+    \centering  \includegraphics[width=\linewidth]{run 1063/energy per plane.png}
+    \caption{run 1063. Average amp in each plane. The blue plot describe the average amplitude over the total amount of events in the run (absolute average amp), showing how much energy did each plane read over the entire run. The orange plot shows the average amplitude over the amount of events read in the plane(relative average amp), this shows the average energy of each plane solely without comparing it to the other planes. We can on the right the amount of hits in each plane, as expected, it grows bigger as the particle goes deeper in the sensor, However, in plane 4 there was probably some malfunction in the sensor as we see a major drop in comparison to the other planes. As for the energies, we see that the average amp per plane grows bigger until plane 5 and then starts to descend. The absolute average amp behave similarly, except for plane 4 which have significantly less hits and therefore lower amplitude.}
+    \label{avg amp per plane run 1101}
+\end{figure}
+
+
+
+
+\begin{figure}[h]
+    \centering  \includegraphics[width=0.6\linewidth]{run 1063/initial shower plane.png}
+    \caption{run 1063. the percentage of events stating the shower on different planes.}
+    \label{empty first planes run 1101}
+\end{figure}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\medskip
+\printbibliography
+
+\end{document}

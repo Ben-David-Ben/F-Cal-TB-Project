@@ -957,8 +957,6 @@ def avg_ENERGY_vs_plane_per_X_position(hit_data, number_of_highest_ocupied_colum
         ax1.set_title("Energy Distribution in the Sensor for Differrnt Columns")
         ax1.legend()
 
-
-
     
     # plot avg amount of hits per position
     total_avg_energy_columns = np.transpose(np.array(total_avg_energy_planes))
