@@ -576,7 +576,7 @@ def plot_empty_first_planes(hit_data):
 
 
 
-# a function that get 2 arrays, and groups them by categories of the first 1, returns the grouped data, mean of data for each group, and the classes
+# a function that get 2 arrays, and groups them by categories of the first 1, returns the grouped data, mean of data for each group, and the classes(categories)
 def ak_groupby(classes, data, round = "true"):
     
     # round the values
