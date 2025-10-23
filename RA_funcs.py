@@ -622,7 +622,7 @@ def initial_X_position_DUT(hit_data, return_y = "false"):
     
     # get only showers starting at the first plane
     plane_7 = hit_data[hit_data.plane == 7]
-    mask = ak.num(plane_7) > 0
+    mask = ak.num(plane_7) == 1
 
     # get the channels data of the first plane
     plane_7_clean = plane_7[mask]
@@ -909,7 +909,7 @@ def avg_ENERGY_vs_plane_per_X_position(hit_data, number_of_highest_ocupied_colum
     # attach the positions to the data
     positions = initial_X_position_DUT(hit_data)
     plane_7 = hit_data[hit_data.plane == 7]
-    mask = ak.num(plane_7) > 0
+    mask = ak.num(plane_7) == 1
     events_starting_at_7 = hit_data[mask]
     hit_data_positions = ak.zip({ "hits":events_starting_at_7, "positions":positions},depth_limit=1)
     
