@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pylab as plt
 import uproot
 import seaborn
+import RA_funcs as rf
 from scipy.signal import find_peaks
 
 print("imports work")
@@ -1031,4 +1032,111 @@ def Radii_from_Initial_position(hit_data):
     events_from_first_plane_with_Radii = ak.with_field(first_plane_starting_events, radii, "Distance")
 
     return events_from_first_plane_with_Radii
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Histogram of ENERGies in all showers starting at a certain position
+  
+def Histo_shower_energy_for_X_position(hit_data, number_of_highest_ocupied_columns, single_pad_only = "false"):
+    
+    # get only showers starting at the first plane to identify the initial location
+    plane_7 = hit_data[hit_data.plane == 7]
+    if single_pad_only == "false":
+        mask = ak.num(plane_7) > 0
+
+    if single_pad_only == "true":
+        mask = ak.num(plane_7) == 1
+
+    first_plane_starting_events = hit_data[mask]
+
+    # determine the initial location of the shower
+    # get the data on the first plane
+    plane_7_clean = plane_7[mask]
+    plane_7_channel = plane_7_clean.ch
+    # divide by x positions
+    y, x = divmod(plane_7_channel, 20) #y is the quontinent and is the row, x is the remainder and column
+    x_list = x.to_list()
+    x_ak = ak.Array(x_list)
+    x_avg = ak.mean(x_ak, axis = 1)
+    
+    # compute the shower energy for each event
+    hit_amp_array = first_plane_starting_events.amp
+    event_shower_amp_array = ak.sum(hit_amp_array, axis = 1)
+
+    # get the average shower energy for each X position
+    div, avg_amps, classes = rf.ak_groupby(x_avg, event_shower_amp_array)
+
+    # get the most ocupied columns
+    top_columns = rf.columns_with_max_hits(hit_data, number_of_highest_ocupied_columns)
+    top_columns = np.sort(top_columns)
+    
+
+        
+    
+    # plot
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    
+    # Histogram of energy per position
+    for column in top_columns:
+        Column_data = div[div.classes == column]
+        energies_in_column = ak.flatten(Column_data[ak.num(Column_data) > 0].data) #get only the amplitudes of the needed column
+        print(column, len(energies_in_column))
+        print("########")
+        
+        # find the peak of each histo
+        counts, bins = np.histogram(energies_in_column, bins=200)
+        peak_idx = np.argmax(counts)
+        peak_center = (bins[peak_idx] + bins[peak_idx + 1]) / 2
+
+
+        # plot the histo
+        ax1.hist(energies_in_column, bins=200, histtype='step', label= f'Column: {column}, Peak = {peak_center:.2f}')
+    
+    # ax1.set_xticks(np.arange(0, 20))
+    ax1.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
+    ax1.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
+    ax1.legend()
+    ax1.set_xlabel('X Position at Shower Initiation [Pad Column]')
+    ax1.set_ylabel('Counts')
+    ax1.set_title('Average Shower Energy vs Initial Location')
+
+    # show the amounnt of hits in each plane on a bar chart
+    bins = np.arange(0, 21, 1) 
+    ax2.hist(ak.round(x_avg), bins=bins, edgecolor='black', rwidth=0.8)
+    ax2.set_xticks(np.arange(0, 20) + 0.5)  # shift by 0.5
+    ax2.set_xticklabels(np.arange(0, 20)) 
+    ax2.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
+    ax2.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
+    ax2.set_xlabel('X Position [Pad Column]')
+    ax2.set_ylabel('amount of hits')
+    ax2.set_title('Amount of Events initiating in Each Column of the Sensor')
+    
+    plt.show()
+
+
+
 

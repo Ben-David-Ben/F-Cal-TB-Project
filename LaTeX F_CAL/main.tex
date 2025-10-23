@@ -277,7 +277,7 @@ The reason for the peaks in fig(\ref{amp histo plane 0 zoom}) can be explained b
 
 
 
-\begin{figure}[h]
+\begin{figure}[h!]
     \centering  \includegraphics[width=\linewidth]{run 1101/avg total amp for each plane.png}
     \caption{Average amp in each plane. The blue plot describe the average amplitude over the total amount of events in the run (absolute average amp), showing how much energy did each plane read over the entire run. The orange plot shows the average amplitude over the amount of events read in the plane(relative average amp), this shows the average energy of each plane solely without comparing it to the other planes. We can on the right the amount of hits in each plane, as expected, it grows bigger as the particle goes deeper in the sensor, However, in plane 4 there was probably some malfunction in the sensor as we see a major drop in comparison to the other planes. As for the energies, we see that the average amp per plane grows bigger until plane 5 and then starts to descend. The absolute average amp behave similarly, except for plane 4 which have significantly less hits and therefore lower amplitude.}
     \label{avg amp per plane run 1101}
@@ -286,11 +286,12 @@ The reason for the peaks in fig(\ref{amp histo plane 0 zoom}) can be explained b
 
 
 
-\begin{figure}[h]
+\begin{figure}[h!]
     \centering  \includegraphics[width=0.6\linewidth]{run 1101/percent of events with different numbers of empty first planes.png}
     \caption{the percentage of events where the stated planes were the first ones to read data.}
     \label{empty first planes run 1101}
 \end{figure}
+\\
 
 
 
@@ -337,7 +338,7 @@ The reason for the peaks in fig(\ref{amp histo plane 0 zoom}) can be explained b
 
 
 \newpage
-\subsection{Run 1063 (On the Gap)}
+\subsection{Run 1063 - On the Gap}
 
 
 
@@ -396,7 +397,7 @@ The reason for the peaks in fig(\ref{amp histo plane 0 zoom}) can be explained b
 
 
 
-The reason for the peaks in fig(\ref{amp histo plane 0 zoom}) can be explained by the Minimum Ionizing particle (MIP), where particles of high energy will cause a minimum amount of energy loss when passing through the silicone. The amount of lost energy in such case will be translated to a digital signal with amplitude of around 15 ADC. Since the electrons also undergo a shower in tungsten before reaching the first plane, the most probable outcomes are of either 1 particle leaving 1 MIP - around 15 amp or after multiplying in the shower we will have 2 leaving 2 MIP - 30 amp or 3 particles leaving 3 MIP - 45 amp. which explains the peaks at 17, 28 and 42.
+The reason for the peaks in fig(\ref{amp histo plane 0}) can be explained by the Minimum Ionizing particle (MIP), where particles of high energy will cause a minimum amount of energy loss when passing through the silicone. The amount of lost energy in such case will be translated to a digital signal with amplitude of around 15 ADC. Since the electrons also undergo a shower in tungsten before reaching the first plane, the most probable outcomes are of either 1 particle leaving 1 MIP - around 15 amp or after multiplying in the shower we will have 2 leaving 2 MIP - 30 amp or 3 particles leaving 3 MIP - 45 amp. which explains the peaks at 17, 28 and 42.
 
 
 
