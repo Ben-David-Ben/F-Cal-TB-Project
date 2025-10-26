@@ -1,14 +1,9 @@
 Missions:
 
-- with the telescope, find the energies and hits of each position around the gap
+- get the updated files
 
+- write an email to shan
 
-- consider why the energies are not equal for all events with different starting points
+- filter the average energies per column to specific Y
 
-- make a energy histogram per location
-
-- amount of hits(over amount of events) in each plane for different distances
-
-- get the energy per plane for different locations
-
-- shower radius
+- compare energies of different pads around the gap with a sample "ideal" pad
