@@ -108,10 +108,12 @@ def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
         counts_matrix[-1-q][r] = counts[i]
 
     # creat the colormap
-    seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Counts'})
+    ax = seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Counts'})
     plt.title(f'Number of Hits in each channel, plane {7 - plane_number}')
     plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
-
+    ax.set_yticks(ax.get_yticks())
+    ax.set_yticklabels(range(len(ax.get_yticks())-1, -1, -1))
+    plt.show()
 
 
 
@@ -663,7 +665,7 @@ def initial_X_position_DUT(hit_data, return_y = "false"):
 
 
 # Shower energy for different initial X positions of the shower
-def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false"):
+def event_shower_energy_vs_X_position2(hit_data, single_pad_only = "false"):
     
     # get only showers starting at the first plane to identify the initial location
     plane_7 = hit_data[hit_data.plane == 7]
@@ -720,6 +722,83 @@ def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false"):
 
 
 
+def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false", specific_Y = "false"):
+    
+    # get only showers starting at the first plane to identify the initial location
+    plane_7 = hit_data[hit_data.plane == 7]
+    if single_pad_only == "false":
+        mask = ak.num(plane_7) > 0
+
+    if single_pad_only == "true":
+        mask = ak.num(plane_7) == 1
+
+    first_plane_starting_events = hit_data[mask]
+
+    # determine the initial location of the shower
+    # get the data on the first plane
+    plane_7_clean = plane_7[mask]
+    plane_7_channel = plane_7_clean.ch
+    
+    # get the x and y positions of each channel
+    y, x = divmod(plane_7_channel, 20) #y is the quontinent and is the row, x is the remainder and column
+    
+    # make x and y one dimensional
+    x_list = x.to_list()
+    x_ak = ak.Array(x_list)
+    x_avg = ak.mean(x_ak, axis = 1)
+
+
+        
+    # compute the shower energy for each event
+    hit_amp_array = first_plane_starting_events.amp
+    event_shower_amp_array = ak.sum(hit_amp_array, axis = 1)
+
+    print(len(x_avg))
+    print(len(event_shower_amp_array))
+
+    if specific_Y  != "false":
+        y = ak.flatten(y)
+        mask_Y = y == specific_Y
+        x_avg = x_avg[mask_Y]
+        event_shower_amp_array = event_shower_amp_array[mask_Y]
+
+    print(len(x_avg))
+    print(len(event_shower_amp_array))
+    # get the average shower energy for each X position
+    div, avg_amps, classes = rf.ak_groupby(x_avg, event_shower_amp_array)
+
+
+    # plot
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    
+    # plot the energy avg per position vs the initial X position of the shower
+    ax1.plot(classes, avg_amps, marker='o')
+    ax1.set_xticks(np.arange(0, 20))
+    ax1.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
+    ax1.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
+    ax1.set_xlabel('X Position at Shower Initiation [Pad Column]')
+    ax1.set_ylabel('AVG Shower Energy')
+    
+    if specific_Y == "false":
+        ax1.set_title('Average Shower Energy vs Initial Location')
+    
+    else:
+        ax1.set_title(f'Average Shower Energy vs Initial Location, y = {specific_Y}')
+
+    # show the amounnt of hits in each plane on a bar chart
+    bins = np.arange(0, 21, 1) 
+    ax2.hist(x_avg, bins=bins, edgecolor='black', rwidth=0.8)
+    ax2.set_xticks(np.arange(0, 20) + 0.5)  # shift by 0.5
+    ax2.set_xticklabels(np.arange(0, 20)) 
+    ax2.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
+    ax2.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
+    ax2.set_xlabel('X Position [Pad Column]')
+    ax2.set_ylabel('amount of hits')
+    ax2.set_title('Amount of Events initiating in Each Column of the Sensor')
+    
+    
+
+    plt.show()
 
 
 
@@ -1120,9 +1199,9 @@ def Histo_shower_energy_for_X_position(hit_data, number_of_highest_ocupied_colum
     ax1.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
     ax1.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
     ax1.legend()
-    ax1.set_xlabel('X Position at Shower Initiation [Pad Column]')
+    ax1.set_xlabel('Energy [ADC]')
     ax1.set_ylabel('Counts')
-    ax1.set_title('Average Shower Energy vs Initial Location')
+    ax1.set_title('Energy Histograms for events with different initial columns')
 
     # show the amounnt of hits in each plane on a bar chart
     bins = np.arange(0, 21, 1) 
