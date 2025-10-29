@@ -86,7 +86,7 @@ def plane_hit_counts(hit_data, plane):
 def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
     
     #  change index so that the first plane is 0 and last is 7
-    plane_number = 7 - plane_number
+    plane_number = 8 - plane_number
 
     # get only the hits on the wanted plane
     hits_plane_n = hit_data[hit_data.plane == plane_number]
@@ -109,7 +109,7 @@ def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 
     # creat the colormap
     ax = seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Counts'})
-    plt.title(f'Number of Hits in each channel, plane {7 - plane_number}')
+    plt.title(f'Number of Hits in each channel, plane {8 - plane_number} XO')
     plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
     ax.set_yticks(ax.get_yticks())
     ax.set_yticklabels(range(len(ax.get_yticks())-1, -1, -1))
@@ -137,7 +137,7 @@ def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 def amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 
     #  change index so that the first plane is 0 and last is 7
-    plane_number = 7 - plane_number
+    plane_number = 8 - plane_number
 
     # get only the hits on the wanted plane
     hits_plane_n = hit_data[hit_data.plane == plane_number]
@@ -161,7 +161,7 @@ def amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 
     # creat the colormap
     seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Counts'})
-    plt.title(f'Total Amplitude in Each Channel, Plane {7 - plane_number}')
+    plt.title(f'Total Amplitude in Each Channel, Plane {8 - plane_number} XO')
     plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
 
 
@@ -184,7 +184,7 @@ def amp_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
 def average_amp_colormap_single_plane(hit_data, plane_number, cmap="managua"):
 
     #  change index so that the first plane is 0 and last is 7
-    plane_number = 7 - plane_number
+    plane_number = 8 - plane_number
 
     # get only the hits on the wanted plane
     hits_plane_n = hit_data[hit_data.plane == plane_number]
@@ -214,7 +214,7 @@ def average_amp_colormap_single_plane(hit_data, plane_number, cmap="managua"):
     # creat the colormap
     plt.figure(figsize=(10, 8))
     seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Amplitude'} , annot=True, fmt=".0f")
-    plt.title(f'Average Amplitude in Each Channel, Plane {7 - plane_number}')
+    plt.title(f'Average Amplitude in Each Channel, Plane {8 - plane_number} XO')
     plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
 
 
@@ -283,7 +283,7 @@ def single_event_evolution_amp(hit_data, TLU_number, cmap="berlin", save = "fals
         # creat the colormap
         plt.figure(figsize=(10, 8))
         seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Amplitude'}, annot=True, fmt=".0f")
-        plt.title(f'Amplitude in Each Channel, plane {7-plane}')
+        plt.title(f'Amplitude in Each Channel, plane {8-plane} XO')
         plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
         # plt.gca().invert_yaxis()
 
@@ -319,7 +319,7 @@ def single_event_evolution_amp(hit_data, TLU_number, cmap="berlin", save = "fals
 def amp_histo_single_plane(hit_data, plane):
 
     # change index so that the first plane is 0 and the last is 7
-    plane = 7 - plane
+    plane = 8 - plane
 
     # get the data of the wanted plane
     hit_plane = hit_data[hit_data.plane == plane]
@@ -346,7 +346,7 @@ def amp_histo_single_plane(hit_data, plane):
     plt.grid(which='major', linestyle='-', linewidth=0.7)
     plt.grid(which='minor', linestyle=':', linewidth=0.5)
     plt.minorticks_on()
-    plt.title(f'Amplitude of Hits Counter, plane {7 - plane}', fontsize=16)
+    plt.title(f'Amplitude of Hits Counter, plane {8 - plane} XO', fontsize=16)
     plt.xlabel('Amplitude', fontsize=14)
     plt.ylabel('Counts', fontsize=14)
     plt.show()
@@ -362,11 +362,11 @@ def amp_histo_single_plane(hit_data, plane):
 
 
 
-# histogram of counts for the total amp of an event in a specific plane
+# histogram of the total amp from an event in a specific plane - sums the amp from all the activated pads in the event
 def amp_histo_single_plane_total_event(hit_data, plane):
 
     # change index so that the first plane is 0 and the last is 7
-    plane = 7 - plane
+    plane = 8 - plane
 
     # get the data of the wanted plane
     hit_plane = hit_data[hit_data.plane == plane]
@@ -396,7 +396,7 @@ def amp_histo_single_plane_total_event(hit_data, plane):
     plt.grid(which='major', linestyle='-', linewidth=0.7)
     plt.grid(which='minor', linestyle=':', linewidth=0.5)
     plt.minorticks_on()
-    plt.title(f'Amplitude of Hits Counter, plane {7 - plane}', fontsize=16)
+    plt.title(f'Amplitude of Hits Counter, plane {8 - plane} XO', fontsize=16)
     plt.xlabel('Amplitude', fontsize=14)
     plt.ylabel('Counts', fontsize=14)
     plt.show()
@@ -427,7 +427,7 @@ def average_amp_vs_plane(hit_data):
     events = len(hit_data)
 
     # list of planes
-    planes = np.arange(0,8,1)
+    planes = np.arange(1,9,1)
 
     # create a list of total energy(amp) for each plane
     plane_avg_amp_list = []
@@ -463,7 +463,7 @@ def average_amp_vs_plane(hit_data):
     # plot the averages for each plane
     ax1.plot(planes, run_avg_amp_list, marker='o', label = "AMP over events in the run")
     ax1.plot(planes, plane_avg_amp_list, marker='v', label = "AMP over hits in plane")
-    ax1.set_xlabel('Plane')
+    ax1.set_xlabel('Plane [XO]')
     ax1.set_ylabel('AVG AMP')
     ax1.set_title('AMP/total events for each plane')
     ax1.grid(True)
@@ -472,7 +472,7 @@ def average_amp_vs_plane(hit_data):
     # show the amounnt of hits in each plane on a bar chart
     ax2.bar(planes, plane_hits_amount_list, color='blue')
     ax2.set_title('Amount of Hits in Each Plane')
-    ax2.set_xlabel('Planes')
+    ax2.set_xlabel('Planes [XO]')
     ax2.set_ylabel('amount of hits')
     ax2.grid(True)
 
@@ -504,7 +504,7 @@ def average_amp_vs_plane(hit_data):
 def plot_empty_first_planes(hit_data):
 
     total_amount_of_events = len(hit_data)
-    first_occupied_plane_list = list(range(7,-1,-1))
+    first_occupied_plane_list = list(range(8,0,-1))
     number_of_events_list = []
     percentage_of_events_list = []
 
@@ -541,7 +541,7 @@ def plot_empty_first_planes(hit_data):
     # plot the data
     bar_container = plt.bar(first_occupied_plane_list, percentage_list_reverse, color = "red")
     plt.bar_label(bar_container,  fmt='{:,.2f}')
-    plt.xlabel('First Occupied Plane')
+    plt.xlabel('Shower Starting Plane [XO]')
     plt.ylabel('Percentage of Events (%)')
     plt.title('The Percent of Events VS Number of First Empty Planes')
     plt.grid(True)
@@ -661,64 +661,6 @@ def initial_X_position_DUT(hit_data, return_y = "false"):
 
 
 
-
-
-
-# Shower energy for different initial X positions of the shower
-def event_shower_energy_vs_X_position2(hit_data, single_pad_only = "false"):
-    
-    # get only showers starting at the first plane to identify the initial location
-    plane_7 = hit_data[hit_data.plane == 7]
-    if single_pad_only == "false":
-        mask = ak.num(plane_7) > 0
-
-    if single_pad_only == "true":
-        mask = ak.num(plane_7) == 1
-
-    first_plane_starting_events = hit_data[mask]
-
-    # determine the initial location of the shower
-    # get the data on the first plane
-    plane_7_clean = plane_7[mask]
-    plane_7_channel = plane_7_clean.ch
-    # divide by x positions
-    y, x = divmod(plane_7_channel, 20) #y is the quontinent and is the row, x is the remainder and column
-    x_list = x.to_list()
-    x_ak = ak.Array(x_list)
-    x_avg = ak.mean(x_ak, axis = 1)
-    
-    # compute the shower energy for each event
-    hit_amp_array = first_plane_starting_events.amp
-    event_shower_amp_array = ak.sum(hit_amp_array, axis = 1)
-
-    # get the average shower energy for each X position
-    div, avg_amps, classes = ak_groupby(x_avg, event_shower_amp_array)
-
-
-    # plot
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
-    
-    # plot the energy avg per position vs the initial X position of the shower
-    ax1.plot(classes, avg_amps, marker='o')
-    ax1.set_xticks(np.arange(0, 20))
-    ax1.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
-    ax1.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
-    ax1.set_xlabel('X Position at Shower Initiation [Pad Column]')
-    ax1.set_ylabel('AVG Shower Energy')
-    ax1.set_title('Average Shower Energy vs Initial Location')
-
-    # show the amounnt of hits in each plane on a bar chart
-    bins = np.arange(0, 21, 1) 
-    ax2.hist(x_avg, bins=bins, edgecolor='black', rwidth=0.8)
-    ax2.set_xticks(np.arange(0, 20) + 0.5)  # shift by 0.5
-    ax2.set_xticklabels(np.arange(0, 20)) 
-    ax2.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
-    ax2.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
-    ax2.set_xlabel('X Position [Pad Column]')
-    ax2.set_ylabel('amount of hits')
-    ax2.set_title('Amount of Events initiating in Each Column of the Sensor')
-    
-    plt.show()
 
 
 
@@ -1029,20 +971,20 @@ def avg_ENERGY_vs_plane_per_X_position(hit_data, number_of_highest_ocupied_colum
         if print_energies == "true":
             print(energy_plane_array)
 
-        # plot avg amount of hits per plane
-        ax1.plot(planes, energy_plane_array, label=f"X Position: {column} Column", marker=".")
+        # plot avg Shower Energy of hits per plane
+        ax1.plot(planes + 1, energy_plane_array, label=f"X Position: {column} Column", marker=".")
         ax1.grid(True, linestyle="--", alpha=0.7)
-        ax1.set_xlabel("Plane")
+        ax1.set_xlabel("Plane [XO]")
         ax1.set_ylabel("Average Shower Energy")
         ax1.set_title("Energy Distribution in the Sensor for Differrnt Columns")
         ax1.legend()
 
     
-    # plot avg amount of hits per position
+    # plot avg Shower Energy of hits per position
     total_avg_energy_columns = np.transpose(np.array(total_avg_energy_planes))
     for plane in planes:
         avg_energy_plane_column = total_avg_energy_columns[plane]
-        ax2.plot(top_columns, avg_energy_plane_column, label = f"Plane: {plane}", marker="D")
+        ax2.plot(top_columns, avg_energy_plane_column, label = f"Plane: {plane + 1}", marker="D")
         ax2.set_xlabel('Column')
         ax2.set_ylabel('Average Shower Energy')
         ax2.set_title('Plane Energy in Each Column')
