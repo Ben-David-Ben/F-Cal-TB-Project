@@ -289,7 +289,7 @@ def single_event_evolution_amp(hit_data, TLU_number, cmap="berlin", save = "fals
 
         # save the plot 
         if save != "false":
-            save_path = f"Plots\\TB2025 Gap\\run {save}\\ evolution of event{TLU_number} plane {7-plane}"
+            save_path = f"Plots\\TB2025 Gap\\run {save}\\run {save} event {TLU_number}\\evolution of event {TLU_number} plane {8-plane}"
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.show()
 
