@@ -1192,46 +1192,6 @@ def Histo_shower_energy_for_X_position(hit_data, number_of_highest_ocupied_colum
 
 
 
-# returns histogram of the energie of events starting at the stated X position
-def shower_energy_histo_single_location(hit_data, Position):
-
-    # get only showers starting at the first plane to identify the initial location
-    plane_7 = hit_data_1101[hit_data_1101.plane == 7]
-    mask = ak.num(plane_7) > 0
-    first_plane_starting_events = hit_data_1101[mask]
-
-    # determine the initial location of the shower
-    # get the data on the first plane
-    plane_7_clean = plane_7[mask]
-    plane_7_channel = plane_7_clean.ch
-
-    # divide by x positions
-    y, x = divmod(plane_7_channel, 20) #y is the quontinent and is the row, x is the remainder and column
-    x_list = x.to_list()
-    x_ak = ak.Array(x_list)
-    x_avg = ak.mean(x_ak, axis = 1)
-    
-    # compute the shower energy for each event
-    hit_amp_array = first_plane_starting_events.amp
-    event_shower_amp_array = ak.sum(hit_amp_array, axis = 1)
-    
-    # get the shower energy for the X position for all events
-    amps_divided_by_class, avg_amps, classes = rf.ak_groupby(x_avg, event_shower_amp_array)
-    
-    # div, avg_amps, classes = ak_groupby(x_avg, event_shower_amp_array)
-    amps_class_position = amps_divided_by_class[amps_divided_by_class.classes == Position]
-    amps_position = amps_class_position.data
-    amps_position_clean = amps_position[ak.num(amps_position) > 0]
-
-    # Plot
-    plt.hist(amps_position_clean[0], bins=7001, range=(0,14000))
-    plt.show()
-    
-    
-    
-
-
-
 
 # returns histogram of the energie of events starting at the stated X position
 def shower_energy_histo_single_location(hit_data, Position):
