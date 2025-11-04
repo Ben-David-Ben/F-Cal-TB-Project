@@ -12,6 +12,86 @@ print("imports work")
 
 
 
+
+"Awkward supportive functions"
+
+# a function that get 2 arrays, and groups them by categories of the first 1, returns the grouped data, mean of data for each group, and the classes(categories)
+def ak_groupby(classes, data, round = "true"):
+    
+    # round the values
+    if round == "true":
+        classes = ak.round(classes)
+
+    # zip the arrays
+    zipped_arrays = ak.zip({ "classes":classes, "data":data})
+
+    # sort by classes
+    data_classes_sorted = zipped_arrays[ak.argsort(zipped_arrays.classes)]
+
+    # divide to subarrays by classes
+    lengths = ak.run_lengths(data_classes_sorted.classes)
+    data_by_class_divided = ak.unflatten(data_classes_sorted, lengths)
+
+    # get the classes list
+    reduced_classes = data_by_class_divided.classes[..., 0]
+
+    # get the mean of data from the same class
+    data_avg_per_location = ak.mean(data_by_class_divided.data, axis = 1)
+
+
+    # return data_by_class_divided 
+    return data_by_class_divided, data_avg_per_location, reduced_classes
+
+
+
+
+
+
+
+
+
+# sums the cumulative value of each subarray in an ak jagged array
+def ak_cumsum_per_sublist(a):
+
+    # lengths of each subarray
+    counts = ak.num(a)
+
+    # flatten all values into one array
+    flat = ak.flatten(a)
+
+    # global cumulative sum
+    cum = np.cumsum(ak.to_numpy(flat))
+
+    # totals per subarray
+    totals = ak.sum(a, axis=1)
+    # cumulative totals of *previous* subarrays
+    offsets = np.concatenate([[0], np.cumsum(ak.to_numpy(totals[:-1]))])
+
+    # repeat each offset by the length of its corresponding subarray
+    offsets_repeated = np.repeat(offsets, ak.to_numpy(counts))
+
+    # subtract offsets to reset each subarray’s start to 0
+    cum_shifted = cum - offsets_repeated
+
+    # rebuild jagged structure
+    return ak.unflatten(cum_shifted, counts)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "Run Analysis - location, energy histogram etc"
 
 
@@ -576,39 +656,6 @@ def plot_empty_first_planes(hit_data):
 
 
 "Spatial dependence Analysis"
-
-
-
-# a function that get 2 arrays, and groups them by categories of the first 1, returns the grouped data, mean of data for each group, and the classes(categories)
-def ak_groupby(classes, data, round = "true"):
-    
-    # round the values
-    if round == "true":
-        classes = ak.round(classes)
-
-    # zip the arrays
-    zipped_arrays = ak.zip({ "classes":classes, "data":data})
-
-    # sort by classes
-    data_classes_sorted = zipped_arrays[ak.argsort(zipped_arrays.classes)]
-
-    # divide to subarrays by classes
-    lengths = ak.run_lengths(data_classes_sorted.classes)
-    data_by_class_divided = ak.unflatten(data_classes_sorted, lengths)
-
-    # get the classes list
-    reduced_classes = data_by_class_divided.classes[..., 0]
-
-    # get the mean of data from the same class
-    data_avg_per_location = ak.mean(data_by_class_divided.data, axis = 1)
-
-
-    # return data_by_class_divided 
-    return data_by_class_divided, data_avg_per_location, reduced_classes
-
-
-
-
 
 
 
@@ -1233,3 +1280,50 @@ def shower_energy_histo_single_location(hit_data, Position):
     plt.grid()
     plt.legend()
     plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Returns a list of the distance (in terms of pad) where a specific percentage of the total energy is contained in each event
+def frac_contained_energy_radius(data_with_distances, energy_percentage):
+
+    # get the distances and amplitudes of the hits and organise them from smallest distance to furthest
+    zipped_arrays = ak.zip({ "R":data_with_distances.Distance, "amp":data_with_distances.amp})
+    # print(zipped_arrays)
+    data_classes_sorted = zipped_arrays[ak.argsort(zipped_arrays.R)] # sort by distances
+    # print("#############")
+    # print(data_classes_sorted)
+    R = data_classes_sorted.R
+    print(R)
+    amp = data_classes_sorted.amp
+    print(amp)
+
+    # get the index where the cumulative amplitude is bigger the the wanted energy percentage
+    total_amp = ak.sum(amp, axis = 1)
+
+    cumulative_amp = rf.ak_cumsum_per_sublist(amp)
+    f = cumulative_amp / total_amp  
+    print(f)
+    mask = f >= energy_percentage
+    R_beyond_percent = R[mask]
+    R_at_percent = ak.firsts(R_beyond_percent)
+    print(f[mask])
+    return R_at_percent
+    
