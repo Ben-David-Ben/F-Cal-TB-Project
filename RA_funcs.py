@@ -137,6 +137,61 @@ def get_ROOT_data_zip(run_number, tlu = "false", time = "false", toa = "false" )
 
 
 
+
+
+
+
+# extracts arrays from ROOT file and zip them for every hit, FOR RECONSTRUCTED files
+def get_ROOT_data_zip_RECO(run_number, tlu = "false", time = "false", toa = "false" ):
+
+    file_name = f"TB_FIRE\TB_reco\TB_FIRE_{run_number}_raw_reco.root"
+    # open the file
+    infile = uproot.open(file_name)
+    # print("Folders:", infile.keys())
+
+
+    # open the first "folder" hits
+    hits = infile['Hits']
+    # print("Hits:")
+    # hits.show()
+
+    # create the arrays from all data
+    amp = hits['amplitude'].array()
+    plane = hits['plane_ID'].array()
+    plane = 7 - plane
+    channel = hits['ch_ID'].array()
+    if tlu == "true":
+        tlu = hits['TLU_number'].array()
+    if toa == "true":
+        toa = hits['toa'].array()
+    if time == "true":
+        time = hits['timestamp'].array()
+
+    # create a zipped array of data for every hit(reading in the sensor)
+    hit_data = ak.zip({ "plane":plane, "ch":channel, "amp":amp})
+    print(f"{run_number} RECONSTRUCTED finished")
+
+    return hit_data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # gets data and returns for a specific plane: pads_2d - the pads with signals in 2d coordinates ; counts- amount of hits on each pad
 def plane_hit_counts(hit_data, plane):
 
@@ -1306,24 +1361,98 @@ def frac_contained_energy_radius(data_with_distances, energy_percentage):
 
     # get the distances and amplitudes of the hits and organise them from smallest distance to furthest
     zipped_arrays = ak.zip({ "R":data_with_distances.Distance, "amp":data_with_distances.amp})
-    # print(zipped_arrays)
     data_classes_sorted = zipped_arrays[ak.argsort(zipped_arrays.R)] # sort by distances
-    # print("#############")
-    # print(data_classes_sorted)
     R = data_classes_sorted.R
-    print(R)
     amp = data_classes_sorted.amp
-    print(amp)
+
+    # total energy in each event
+    total_amp = ak.sum(amp, axis = 1)
+    
+    # summ cumulative energy in each hit of the event
+    cumulative_amp = rf.ak_cumsum_per_sublist(amp)
+
+    # fraction of the energy in every hit
+    f = cumulative_amp / total_amp  
 
     # get the index where the cumulative amplitude is bigger the the wanted energy percentage
-    total_amp = ak.sum(amp, axis = 1)
-
-    cumulative_amp = rf.ak_cumsum_per_sublist(amp)
-    f = cumulative_amp / total_amp  
-    print(f)
     mask = f >= energy_percentage
     R_beyond_percent = R[mask]
     R_at_percent = ak.firsts(R_beyond_percent)
-    print(f[mask])
+
+
     return R_at_percent
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def frac_energy_radii_histo(hit_data_with_distances, fraction_of_energy, calculate_R=False):
+
+    if calculate_R:
+        hit_data_with_distances = rf.Radii_from_Initial_position(hit_data_with_distances)
+
+    R_at_frac = rf.frac_contained_energy_radius(hit_data_with_distances, fraction_of_energy)
+
+    fig, ax1 = plt.subplots(figsize=(8, 5))
+    bins = np.arange(0, ak.max(R_at_frac) + 0.5, 0.5)
+    counts, edges, patches = ax1.hist(R_at_frac, bins=bins, color='skyblue', edgecolor='black')
+
+    ax1.set_xlabel("Radius [Pad Units]")
+    ax1.set_ylabel("Counts")
+    ax1.set_title(f"Radii containing {fraction_of_energy} of the energy in event")
+    ax1.set_xticks(np.arange(0, np.max(R_at_frac) + 1, 1))
+    ax1.grid(True, which='both', axis='both', linestyle='--', linewidth=0.7, alpha=0.7)
+
+    ax1.yaxis.set_minor_locator(plt.MultipleLocator((ax1.get_yticks()[1] - ax1.get_yticks()[0]) / 2))
+    ax1.grid(True, which='major', axis='y', linestyle='--', linewidth=0.8, alpha=0.7)
+    ax1.grid(True, which='minor', axis='y', linestyle='--', linewidth=0.6, alpha=0.5)
+
+    # --- Secondary y-axis (percentages) ---
+    ax2 = ax1.twinx()
+    total = np.sum(counts)                # total number of events
+    ax2.set_ylim(ax1.get_ylim())          # match limits to left axis
+    ax2.set_ylabel("Percentage out of all events")
+
+    # Find the maximum visible count on the left axis
+    ymax = ax1.get_ylim()[1]
+
+    # Create tick positions corresponding to 5% increments of *total counts*
+    max_percent = 100 * ymax / total      # how far up the left axis goes in %
+    percent_ticks = np.arange(0, max_percent + 5, 5)   # every 5% up to that value
+    count_ticks = percent_ticks / 100 * total           # convert % back to counts
+
+    # Apply these ticks and labels to the right axis
+    ax2.set_yticks(count_ticks)
+    ax2.set_yticklabels([f"{p:.0f}%" for p in percent_ticks])
+
+
+    plt.tight_layout()
+    plt.show()
