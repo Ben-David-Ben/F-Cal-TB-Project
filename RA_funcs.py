@@ -1184,7 +1184,6 @@ def Radii_from_Initial_position(hit_data):
 # Histogram of ENERGies in all showers starting at a certain position
 def Histo_shower_energy_for_X_position(hit_data, number_of_highest_ocupied_columns, single_pad_only = "false", specific_Y = "false", normalize = "false"):
     
-    y_name = ""
     # get only showers starting at the first plane to identify the initial location
     plane_7 = hit_data[hit_data.plane == 7]
     if single_pad_only == "false":
@@ -1196,9 +1195,11 @@ def Histo_shower_energy_for_X_position(hit_data, number_of_highest_ocupied_colum
     first_plane_starting_events = hit_data[mask]
 
     # determine the initial location of the shower
+
     # get the data on the first plane
     plane_7_clean = plane_7[mask]
     plane_7_channel = plane_7_clean.ch
+    
     # divide by x positions
     y, x = divmod(plane_7_channel, 20) #y is the quontinent and is the row, x is the remainder and column
     x_list = x.to_list()
