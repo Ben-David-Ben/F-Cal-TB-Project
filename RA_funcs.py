@@ -1,12 +1,15 @@
 # ROOT ANALYSIS FUNCTIONS
 
-import awkward as ak
 import numpy as np
 import matplotlib.pylab as plt
 import uproot
+import awkward as ak
 import seaborn
 import RA_funcs as rf
 from scipy.signal import find_peaks
+from scipy.optimize import curve_fit
+from scipy.special import gamma
+
 
 print("imports work")
 
@@ -1456,4 +1459,379 @@ def frac_energy_radii_histo(hit_data_with_distances, fraction_of_energy, calcula
 
 
     plt.tight_layout()
+    plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Statistics
+
+
+
+
+# returns statistic values of histogram for shower energies of events starting at specific column
+def histo_statistics_single_column(hit_data, Position, specific_Y = "all_rows"):
+
+    # get only showers starting at the first plane to identify the initial location
+    plane_7 = hit_data[hit_data.plane == 7]
+    mask = ak.num(plane_7) == 1
+    first_plane_starting_events = hit_data[mask]
+
+    # determine the initial location of the shower
+    # get the data on the first plane
+    plane_7_clean = plane_7[mask]
+    plane_7_channel = plane_7_clean.ch
+
+    # divide by x positions
+    y, x = divmod(plane_7_channel, 20) #y is the quontinent and is the row, x is the remainder and column
+    x_list = x.to_list()
+    x_ak = ak.Array(x_list)
+    x_avg = ak.mean(x_ak, axis = 1)
+    
+    # compute the shower energy for each event
+    hit_amp_array = first_plane_starting_events.amp
+    event_shower_amp_array = ak.sum(hit_amp_array, axis = 1)
+
+    # Filter for specific row only
+    if specific_Y  != "all_rows":
+        y = ak.flatten(y)
+        mask_Y = y == specific_Y
+        x_avg = x_avg[mask_Y]
+        event_shower_amp_array = event_shower_amp_array[mask_Y]
+        
+    # get the shower energy for the X position for all events
+    amps_divided_by_class, avg_amps, classes = rf.ak_groupby(x_avg, event_shower_amp_array)
+    
+    amps_class_position = amps_divided_by_class[amps_divided_by_class.classes == Position]
+    amps_position = amps_class_position.data
+    energies_in_column = ak.flatten(amps_position[ak.num(amps_position) > 0])
+    
+    # Histogram
+    max_range = 12000
+    range = (0, max_range)
+    bin_size = 50
+    bins = np.arange(0, max_range + 1, bin_size)
+    
+    # most common energy (peak of the histo)
+    counts, bins = np.histogram(energies_in_column, bins = bins, range=range)
+    peak_idx = np.argmax(counts)
+    peak_energy = (bins[peak_idx] + bins[peak_idx + 1]) / 2
+    
+    # Histo Mean
+    mean_energy = ak.mean(energies_in_column)
+    
+    # Histo Standard deveiation (how spread is the data) marked as sigma
+    std = ak.std(energies_in_column)
+
+    # standard deviation error of mean (how uncertain the mean is) marked as sigma_mean
+    sem = std/np.sqrt(len(energies_in_column))
+    
+    return mean_energy, std, sem, peak_energy, energies_in_column
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Gaussian fit
+
+# returns the optimized fit values for gaussian fit for histogram
+def fit_histo_to_gaussian(histo_data, bin_size):
+    
+    # convert data to numpy in order to fit
+    histo_data = ak.to_numpy(histo_data)
+
+    # bins paramaters
+    max_range = 12000
+    range = (0, max_range)
+    bins = np.arange(0, max_range + 1, bin_size)
+
+    # histogram data
+    counts, bin_edges = np.histogram(histo_data, bins=bins, range = range)
+    bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
+
+    # Define Gaussian function
+    def gaussian(x, A, mu, sigma):
+        return A * np.exp(-(x - mu)**2 / (2 * sigma**2))
+
+    # Fit the Gaussian to histogram data 
+    popt, pcov = curve_fit(gaussian, bin_centers, counts, p0=[1, np.mean(histo_data), np.std(histo_data)],bounds = ([0, 0, 0], [max(counts), np.inf, np.inf]))
+    A_fit, mu_fit, sigma_fit = popt
+    gaussian_Y = gaussian(bin_centers, *popt)
+    return A_fit, mu_fit, sigma_fit, bin_centers, gaussian_Y
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# plot histogram with fit and statistics values
+def Gaussian_fit_histo_single_column(hit_data, Position, specific_Y = "all_rows", bin_size = 50):
+
+    # data statistics
+    mean_energy, std, sem, peak_energy, energies_in_column = histo_statistics_single_column(hit_data, Position, specific_Y)
+    counts = len(energies_in_column)
+
+    # optimized gaussian values for the histo
+    A_fit, mu_fit, sigma_fit, bin_centers, gaussian_Y = fit_histo_to_gaussian(energies_in_column, bin_size)
+
+    # Multi-line string for the box
+    textstr = '\n'.join((
+        # histo
+        rf'$\bf{{Histogram:}}$',
+        f'Mean = {mean_energy:.2f}',
+        rf'$\sigma$ = {std:.2f}',
+        rf'$\sigma_{{\mu}}$ = {sem:.2f}',
+        f'Counts = {counts:.2f}',
+        f'Peak = {peak_energy:.2f}',
+        '\n',
+        # gaussian
+        rf'$\bf{{Gaussian:}}$',
+        f'Mean = {mu_fit:.2f}',
+        rf'$\sigma$ = {sigma_fit:.2f}',
+        rf'$\sigma_{{\mu}}$ = {sigma_fit/np.sqrt(counts):.2f}',
+
+        
+    ))
+
+    # Place the box inside the axes
+    plt.text(
+        0.65, 0.75, textstr, transform=plt.gca().transAxes,
+        fontsize=10, verticalalignment='top',
+        bbox=dict(boxstyle='round', facecolor='white', alpha=0.8)
+        )
+
+    # Histogram
+    max_range = 12000
+    range = (0, max_range)
+    bins = np.arange(0, max_range + 1, bin_size)
+    title = f'Energy Histograms for events starting at different initial columns, y = {specific_Y}'
+
+    # plot the histogram with matplotlib
+    plt.hist(energies_in_column, bins = bins, range=range)
+    plt.plot(bin_centers, gaussian_Y, 'r-', linewidth=2, label='Gaussian fit')
+    plt.grid()
+    plt.xlabel(f"Energy in Column {Position}")
+    plt.ylabel("Counts")
+    plt.title(f'Energies of Events Starting at Column {Position}, y =  {specific_Y}, \n Gaussian fit')
+    plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Gamma fit
+
+
+
+# returns the optimized fit values for Gamma
+def fit_histo_to_Gamma(histo_data, bin_size):
+    
+    # convert data to numpy in order to fit
+    histo_data = ak.to_numpy(histo_data)
+
+    # statistics
+    mean = np.mean(histo_data)
+    sigma = np.std(histo_data)
+
+    # bins paramaters
+    max_range = 12000
+    data_range = (0, max_range)
+    bins = np.arange(0, max_range + 1, bin_size)
+
+    # histogram data
+    # counts, bin_edges = np.histogram(histo_data, bins=bins, range = data_range)
+    counts, bin_edges = np.histogram(histo_data, bins=bins, range = data_range, density = True)
+    bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
+
+    # Define Gaussian function
+    def Gamma_pdf(x, A, alpha, theta):
+        return A * 1/(gamma(alpha)*theta**alpha) * x**(alpha-1) * np.exp(-x/theta)
+    
+    # def Gamma_pdf(x, alpha, theta):
+    #     return 1/(gamma(alpha)*theta**alpha) * x**(alpha-1) * np.exp(-x/theta)
+    
+    # Fit the Gaussian to histogram data 
+    popt, pcov = curve_fit(Gamma_pdf, bin_centers, counts, p0=[1, (mean/sigma)**2, (sigma**2)/mean],bounds = ([0, 0, 0], [np.inf, np.inf, np.inf]))
+    A_fit, alpha_fit, theta_fit = popt
+    Gamma_Y = Gamma_pdf(bin_centers, *popt)
+    return A_fit, alpha_fit, theta_fit, bin_centers, Gamma_Y
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# plot histogram with fit and statistics values
+def Gamma_fit_histo_single_column(hit_data, Position, specific_Y = "all_rows", bin_size = 50):
+
+    # data statistics
+    mean_energy, std, sem, peak_energy, energies_in_column = histo_statistics_single_column(hit_data, Position, specific_Y)
+    counts = len(energies_in_column)
+
+    # optimized gaussian values for the histo
+    A_fit, alpha_fit, theta_fit, bin_centers, Gamma_Y = fit_histo_to_Gamma(energies_in_column, bin_size)
+    
+    # Fit statistics
+    mu_fit = alpha_fit*theta_fit
+    sigma_fit = np.sqrt(alpha_fit) * theta_fit
+
+    # Multi-line string for the box
+    textstr = '\n'.join((
+        # histo
+        rf'$\bf{{Histogram:}}$',
+        f'Mean = {mean_energy:.2f}',
+        rf'$\sigma$ = {std:.2f}',
+        rf'$\sigma_{{\mu}}$ = {sem:.2f}',
+        f'Counts = {counts:.2f}',
+        f'Peak = {peak_energy:.2f}',
+        '\n',
+        # gaussian
+        rf'$\bf{{Gamma_pdf:}}$',
+        f'Mean = {mu_fit:.2f}',
+        rf'$\sigma$ = {sigma_fit:.2f}',
+        rf'$\sigma_{{\mu}}$ = {sigma_fit/np.sqrt(counts):.2f}',
+
+        
+    ))
+
+    # Place the box inside the axes
+    plt.text(
+        0.65, 0.75, textstr, transform=plt.gca().transAxes,
+        fontsize=10, verticalalignment='top',
+        bbox=dict(boxstyle='round', facecolor='white', alpha=0.8)
+        )
+
+    # Histogram
+    max_range = 12000
+    range = (0, max_range)
+    bins = np.arange(0, max_range + 1, bin_size)
+    title = f'Energy Histograms for events starting at different initial columns, y = {specific_Y}'
+
+    # plot the histogram with matplotlib
+    plt.hist(energies_in_column, bins = bins, range=range, density = True)
+    plt.plot(bin_centers, Gamma_Y, 'r-', linewidth=2, label='Gaussian fit')
+    plt.grid()
+    plt.xlabel(f"Energy in Column {Position}")
+    plt.ylabel("Counts")
+    # plt.title(f'Energy Histograms for events starting at different initial columns, y =  {specific_Y}')
+    plt.title(f'Energies of Events Starting at Column {Position}, y =  {specific_Y}, \n Gamma fit')
     plt.show()

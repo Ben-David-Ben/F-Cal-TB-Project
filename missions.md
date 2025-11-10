@@ -12,4 +12,4 @@ Missions:
 
 - telescope
 
-- 
+- ask michal about the runs at the end of the shower, use variance addition to connect them
