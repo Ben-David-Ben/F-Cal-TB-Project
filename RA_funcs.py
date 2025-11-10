@@ -769,6 +769,83 @@ def initial_X_position_DUT(hit_data, return_y = "false"):
 
 
 
+# def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false", specific_Y = "false"):
+    
+#     # get only showers starting at the first plane to identify the initial location
+#     plane_7 = hit_data[hit_data.plane == 7]
+#     if single_pad_only == "false":
+#         mask = ak.num(plane_7) > 0
+
+#     if single_pad_only == "true":
+#         mask = ak.num(plane_7) == 1
+
+#     first_plane_starting_events = hit_data[mask]
+
+#     # determine the initial location of the shower
+#     # get the data on the first plane
+#     plane_7_clean = plane_7[mask]
+#     plane_7_channel = plane_7_clean.ch
+    
+#     # get the x and y positions of each channel
+#     y, x = divmod(plane_7_channel, 20) #y is the quontinent and is the row, x is the remainder and column
+    
+#     # make x and y one dimensional
+#     x_list = x.to_list()
+#     x_ak = ak.Array(x_list)
+#     x_avg = ak.mean(x_ak, axis = 1)
+
+        
+#     # compute the shower energy for each event
+#     hit_amp_array = first_plane_starting_events.amp
+#     event_shower_amp_array = ak.sum(hit_amp_array, axis = 1)
+
+#     # calculate for a specific row if needed
+#     if specific_Y  != "false":
+#         y = ak.flatten(y)
+#         mask_Y = y == specific_Y
+#         x_avg = x_avg[mask_Y]
+#         event_shower_amp_array = event_shower_amp_array[mask_Y]
+
+#     print(len(x_avg))
+#     print(len(event_shower_amp_array))
+#     # get the average shower energy for each X position
+#     div, avg_amps, classes = rf.ak_groupby(x_avg, event_shower_amp_array)
+
+#     # plot
+#     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    
+#     # plot the energy avg per position vs the initial X position of the shower
+#     ax1.plot(classes, avg_amps, marker='o')
+#     ax1.set_xticks(np.arange(0, 20))
+#     ax1.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
+#     ax1.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
+#     ax1.set_xlabel('X Position at Shower Initiation [Pad Column]')
+#     ax1.set_ylabel('AVG Shower Energy')
+    
+#     if specific_Y == "false":
+#         ax1.set_title('Average Shower Energy vs Initial Location')
+    
+#     else:
+#         ax1.set_title(f'Average Shower Energy vs Initial Location, y = {specific_Y}')
+
+#     # show the amounnt of hits in each plane on a bar chart
+#     bins = np.arange(0, 21, 1) 
+#     ax2.hist(x_avg, bins=bins, edgecolor='black', rwidth=0.8)
+#     ax2.set_xticks(np.arange(0, 20) + 0.5)  # shift by 0.5
+#     ax2.set_xticklabels(np.arange(0, 20)) 
+#     ax2.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
+#     ax2.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
+#     ax2.set_xlabel('X Position [Pad Column]')
+#     ax2.set_ylabel('amount of hits')
+#     ax2.set_title('Amount of Events initiating in Each Column of the Sensor')
+    
+#     plt.show()
+
+
+
+
+
+
 def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false", specific_Y = "false"):
     
     # get only showers starting at the first plane to identify the initial location
@@ -806,16 +883,27 @@ def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false", speci
         x_avg = x_avg[mask_Y]
         event_shower_amp_array = event_shower_amp_array[mask_Y]
 
-    print(len(x_avg))
-    print(len(event_shower_amp_array))
     # get the average shower energy for each X position
     div, avg_amps, classes = rf.ak_groupby(x_avg, event_shower_amp_array)
+    
+    # get the energies in all column (2d array)
+    energies_per_column = div.data
+    
+    # get the statistics for each column
+    means = ak.mean(energies_per_column, axis=1)
+    sigmas = ak.std(energies_per_column, axis=1)
+
+    # mean unsertinty
+    sem = sigmas / np.sqrt(ak.num(energies_per_column, axis=1))
 
     # plot
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
     
     # plot the energy avg per position vs the initial X position of the shower
-    ax1.plot(classes, avg_amps, marker='o')
+    # ax1.plot(classes, avg_amps, marker='o')
+    ax1.errorbar(
+    classes, avg_amps, yerr=sem, fmt='-o',ecolor='black', elinewidth=1, capsize=4, capthick=1, markerfacecolor='blue', markersize=6, label='Data with error')
+
     ax1.set_xticks(np.arange(0, 20))
     ax1.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
     ax1.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
@@ -840,10 +928,6 @@ def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false", speci
     ax2.set_title('Amount of Events initiating in Each Column of the Sensor')
     
     plt.show()
-
-
-
-
 
 
 
@@ -915,81 +999,6 @@ def columns_with_max_hits(hit_data, number_of_columns):
 
 
 
-
-
-
-
-
-
-
-# average amount of hits in a shower vs columns and planes
-def avg_hit_amount_vs_plane_per_X_position(hit_data, number_of_highest_ocupied_columns):
-    
-    planes = np.arange(0,8)
-
-    # attach the positions to the data
-    positions = initial_X_position_DUT(hit_data)
-    plane_7 = hit_data[hit_data.plane == 7]
-    mask = ak.num(plane_7) > 0
-    events_starting_at_7 = hit_data[mask]
-    hit_data_positions = ak.zip({ "hits":events_starting_at_7, "positions":positions},depth_limit=1)
-    
-    # get the most ocupied columns
-    top_columns = columns_with_max_hits(hit_data, number_of_highest_ocupied_columns)
-    top_columns = np.sort(top_columns)
-    print(top_columns)
-
-    # array to store all the data of planes per column
-    total_avg_amount_planes = []
-
-    # create to plot figure
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
-    
-    for column in top_columns:
-        print(column)
-        # creat an array to store the amount of hits in each plane
-        hits_amount_plane_array = []
-
-        # get the data of events initiating in the wanted column
-        hit_data_column = hit_data_positions[(hit_data_positions.positions >= column) & (hit_data_positions.positions < column + 1)]
-
-
-        # find the amount of hits in a plane for the column and add to the array
-        for plane in planes:
-            plane = 7-plane #adjust index so the first plane is 0
-            hit_data_column_plane = hit_data_column.hits[hit_data_column.hits.plane == plane] # the events initiatin at the wanted column and a specific plane 
-            hit_data_column_plane = hit_data_column_plane[ak.num(hit_data_column_plane) > 0] # clean from empty entries
-            num_of_events_column_plane = len(hit_data_column_plane)
-            num_of_hits_column_plane = len(ak.flatten(hit_data_column_plane))
-            avg_hits_per_event_column_plane = num_of_hits_column_plane / num_of_events_column_plane
-            hits_amount_plane_array.append(avg_hits_per_event_column_plane)
-        total_avg_amount_planes.append(hits_amount_plane_array)
-        print(hits_amount_plane_array)
-
-        # plot avg amount of hits per plane
-        ax1.plot(planes, hits_amount_plane_array, label=f"X Position: {column} Column", marker=".")
-        ax1.grid(True, linestyle="--", alpha=0.7)
-        ax1.set_xlabel("Plane")
-        ax1.set_ylabel("Average Amount of Hits")
-        ax1.set_title("Amount of Hits in a in Each Plane")
-        ax1.legend()
-
-
-
-    
-    # plot avg amount of hits per position
-    total_avg_amount_columns = np.transpose(np.array(total_avg_amount_planes))
-    for plane in planes:
-        avg_ampunt_plane_column = total_avg_amount_columns[plane]
-        ax2.plot(top_columns, avg_ampunt_plane_column, label = f"Plane: {plane}", marker="D")
-        ax2.set_xlabel('Column')
-        ax2.set_ylabel('Averag Amount of Hits')
-        ax2.set_title('Amount of Hits in Each Column')
-        ax2.grid(True)
-        ax2.legend()
-
-    fig.suptitle("Average Amount of Hits in a Shower for Different Plane, for Events Initiating in Different Positions", fontsize=14)
-    plt.show()
 
 
 
