@@ -794,13 +794,12 @@ def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false", speci
     x_ak = ak.Array(x_list)
     x_avg = ak.mean(x_ak, axis = 1)
 
-
         
     # compute the shower energy for each event
     hit_amp_array = first_plane_starting_events.amp
     event_shower_amp_array = ak.sum(hit_amp_array, axis = 1)
 
-
+    # calculate for a specific row if needed
     if specific_Y  != "false":
         y = ak.flatten(y)
         mask_Y = y == specific_Y
@@ -811,7 +810,6 @@ def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false", speci
     print(len(event_shower_amp_array))
     # get the average shower energy for each X position
     div, avg_amps, classes = rf.ak_groupby(x_avg, event_shower_amp_array)
-
 
     # plot
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
@@ -841,8 +839,6 @@ def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false", speci
     ax2.set_ylabel('amount of hits')
     ax2.set_title('Amount of Events initiating in Each Column of the Sensor')
     
-    
-
     plt.show()
 
 
@@ -1665,17 +1661,19 @@ def Gaussian_fit_histo_single_column(hit_data, Position, specific_Y = "all_rows"
         rf'$\bf{{Gaussian:}}$',
         f'Mean = {mu_fit:.2f}',
         rf'$\sigma$ = {sigma_fit:.2f}',
-        rf'$\sigma_{{\mu}}$ = {sigma_fit/np.sqrt(counts):.2f}',
-
-        
+        rf'$\sigma_{{\mu}}$ = {sigma_fit/np.sqrt(counts):.2f}',    
     ))
 
     # Place the box inside the axes
     plt.text(
-        0.65, 0.75, textstr, transform=plt.gca().transAxes,
-        fontsize=10, verticalalignment='top',
+        0.98, 0.98, textstr,
+        transform=plt.gca().transAxes,      # axes coordinates: (0,0) bottom-left, (1,1) top-right
+        fontsize=10,
+        verticalalignment='top',     # anchor the top of the box
+        horizontalalignment='right', # anchor the right side of the box
         bbox=dict(boxstyle='round', facecolor='white', alpha=0.8)
-        )
+    )
+
 
     # Histogram
     max_range = 12000
@@ -1808,17 +1806,18 @@ def Gamma_fit_histo_single_column(hit_data, Position, specific_Y = "all_rows", b
         rf'$\bf{{Gamma_pdf:}}$',
         f'Mean = {mu_fit:.2f}',
         rf'$\sigma$ = {sigma_fit:.2f}',
-        rf'$\sigma_{{\mu}}$ = {sigma_fit/np.sqrt(counts):.2f}',
-
-        
+        rf'$\sigma_{{\mu}}$ = {sigma_fit/np.sqrt(counts):.2f}',        
     ))
 
     # Place the box inside the axes
     plt.text(
-        0.65, 0.75, textstr, transform=plt.gca().transAxes,
-        fontsize=10, verticalalignment='top',
+        0.98, 0.98, textstr,
+        transform=plt.gca().transAxes,      # axes coordinates: (0,0) bottom-left, (1,1) top-right
+        fontsize=10,
+        verticalalignment='top',     # anchor the top of the box
+        horizontalalignment='right', # anchor the right side of the box
         bbox=dict(boxstyle='round', facecolor='white', alpha=0.8)
-        )
+    )
 
     # Histogram
     max_range = 12000
