@@ -1663,7 +1663,7 @@ def Gaussian_fit_histo_single_column(hit_data, Position, specific_Y = "all_rows"
         f'Mean = {mean_energy:.2f}',
         rf'$\sigma$ = {std:.2f}',
         rf'$\sigma_{{\mu}}$ = {sem:.2f}',
-        f'Counts = {counts:.2f}',
+        f'Entries = {counts:.2f}',
         f'Peak = {peak_energy:.2f}',
         '\n',
         # gaussian
@@ -1808,7 +1808,7 @@ def Gamma_fit_histo_single_column(hit_data, Position, specific_Y = "all_rows", b
         f'Mean = {mean_energy:.2f}',
         rf'$\sigma$ = {std:.2f}',
         rf'$\sigma_{{\mu}}$ = {sem:.2f}',
-        f'Counts = {counts:.2f}',
+        f'Entries = {counts:.2f}',
         f'Peak = {peak_energy:.2f}',
         '\n',
         # gaussian
