@@ -4,12 +4,12 @@ Missions:
 
 - compare energies of different pads around the gap with a sample "ideal" pad
 
-- talk to halina about the parameters needed when presenting an histogram
-
-- add RMS to histo
-
-- cut x value where you can see better
-
 - telescope
 
 - ask michal about the runs at the end of the shower, use variance addition to connect them
+
+- fix the single Y for event_shower_vs_X_position
+
+- see why theres a difference between the mean of histogram in a column and the values in the event_shower_vs_X_position
+
+- finish the dead channels list function
