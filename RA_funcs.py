@@ -1651,7 +1651,7 @@ def fit_histo_to_gaussian(histo_data, bin_size):
 
 
 # plot histogram with fit and statistics values
-def Gaussian_fit_histo_single_column(hit_data, Position, specific_Y = "all_rows", bin_size = 50):
+def Single_column_energy_histo_Gaussian_fit(hit_data, Position, specific_Y = "all_rows", bin_size = 50):
 
     # data statistics
     mean_energy, std, sem, peak_energy, energies_in_column = histo_statistics_single_column(hit_data, Position, specific_Y)
@@ -1664,10 +1664,10 @@ def Gaussian_fit_histo_single_column(hit_data, Position, specific_Y = "all_rows"
     textstr = '\n'.join((
         # histo
         rf'$\bf{{Histogram:}}$',
+        f'Entries = {counts:.2f}',
         f'Mean = {mean_energy:.2f}',
         rf'$\sigma$ = {std:.2f}',
         rf'$\sigma_{{\mu}}$ = {sem:.2f}',
-        f'Entries = {counts:.2f}',
         f'Peak = {peak_energy:.2f}',
         '\n',
         # gaussian
@@ -1790,16 +1790,15 @@ def fit_histo_to_Gamma(histo_data, bin_size):
 
 
 
-
 # plot histogram with fit and statistics values
-def Gamma_fit_histo_single_column(hit_data, Position, specific_Y = "all_rows", bin_size = 50):
+def single_column_energy_Gamma_fit(hit_data, Position, specific_Y = "all_rows", bin_size = 50):
 
     # data statistics
-    mean_energy, std, sem, peak_energy, energies_in_column = histo_statistics_single_column(hit_data, Position, specific_Y)
+    mean_energy, std, sem, peak_energy, energies_in_column = rf.histo_statistics_single_column(hit_data, Position, specific_Y)
     counts = len(energies_in_column)
 
     # optimized gaussian values for the histo
-    A_fit, alpha_fit, theta_fit, bin_centers, Gamma_Y = fit_histo_to_Gamma(energies_in_column, bin_size)
+    A_fit, alpha_fit, theta_fit, bin_centers, Gamma_Y = rf.fit_histo_to_Gamma(energies_in_column, bin_size)
     
     # Fit statistics
     mu_fit = alpha_fit*theta_fit
@@ -1809,20 +1808,21 @@ def Gamma_fit_histo_single_column(hit_data, Position, specific_Y = "all_rows", b
     textstr = '\n'.join((
         # histo
         rf'$\bf{{Histogram:}}$',
+        f'Entries = {counts:.2f}',
         f'Mean = {mean_energy:.2f}',
         rf'$\sigma$ = {std:.2f}',
         rf'$\sigma_{{\mu}}$ = {sem:.2f}',
-        f'Entries = {counts:.2f}',
         f'Peak = {peak_energy:.2f}',
         '\n',
-        # gaussian
-        rf'$\bf{{Gamma_pdf:}}$',
+        # Gamma
+        rf'$\bf{{Gamma \quad pdf:}}$',
         f'Mean = {mu_fit:.2f}',
         rf'$\sigma$ = {sigma_fit:.2f}',
-        rf'$\sigma_{{\mu}}$ = {sigma_fit/np.sqrt(counts):.2f}',        
-    ))
+        rf'$\sigma_{{\mu}}$ = {sigma_fit/np.sqrt(counts):.2f}',
+        ))
 
-    # Place the box inside the axes
+
+    # place the text in the plot
     plt.text(
         0.98, 0.98, textstr,
         transform=plt.gca().transAxes,      # axes coordinates: (0,0) bottom-left, (1,1) top-right
