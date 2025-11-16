@@ -505,8 +505,6 @@ In figure (\ref{AVG-energy-per-X-1063}) we see the average energy of an event gi
 
 
 \FloatBarrier
-
-
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.8\linewidth]
@@ -559,7 +557,7 @@ In the following table we will present some of the candidates runs:
 
 
 
-
+\FloatBarrier
 \begin{table}[]
     \begin{tabular}{|c|cc|cc|}
         \hline
@@ -573,18 +571,101 @@ In the following table we will present some of the candidates runs:
         1093                                                                  & \multicolumn{1}{c|}{5,6}                & 6                                        & \multicolumn{1}{c|}{-20}  & 10.1 \\ \hline
         1094                                                                  & \multicolumn{1}{c|}{5,6}                & 6                                        & \multicolumn{1}{c|}{-20}  & 10.1 \\ \hline
     \end{tabular}
-    \label{Table_of_runs_reco}
+    \label{table:runs_location}
 \end{table}
 
 \\ \\
 To choose our reference runs, we want the least leakege well-behaving shower, we want the center to be as far as possible from the boundaries and the gap. The dimensions of the left tower is 13 rows and 20 columns as can be seen in figure (\ref{hit_amount_colormap_1101}). Hence, the best runs will be 1093 and 1094.
 \\
-To choose our runs for gap analysis we want to be as close to the gap but as far from the boundaries as possible. Since the gap is between columns 11,12, the bast runs will be the ones also located in the middle rows of the sensor. Therefore we will check runs 1080 and 1081.
+To choose our runs for gap analysis we want to be as close to the gap but as far from the boundaries as possible. Since the gap is between columns 11,12, according to table(\ref{table:runs_location}) the best runs will be the ones also located in the middle rows of the sensor. Therefore we will check runs 1080 and 1081.
 \\ \\
 
 Next Lets observe this runs:
 
-\ben{add the runs hit plane colormap}
+\FloatBarrier
+\begin{figure}[htbp]
+    \centering
+    \begin{tabular}{cccc}
+        \includegraphics[width=0.22\textwidth]{run 1080 reco/plane_1_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1080 reco/plane_2_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1080 reco/plane_3_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1080 reco/plane_4_hits.png}   \\
+        \includegraphics[width=0.22\textwidth]{run 1080 reco/plane_5_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1080 reco/plane_6_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1080 reco/plane_7_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1080 reco/plane_8_hits.png}   \\
+    \end{tabular}
+    \caption{Run 1080 Reconstructed, Hits amount in Each Channel in Every Plane.}
+    \label{fig:Hits_amoun_colormap_1080}
+\end{figure}
+
+
+
+
+
+\FloatBarrier
+\begin{figure}[htbp]
+    \centering
+    \begin{tabular}{cccc}
+        \includegraphics[width=0.22\textwidth]{run 1081 reco/plane_1_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1081 reco/plane_2_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1081 reco/plane_3_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1081 reco/plane_4_hits.png}   \\
+        \includegraphics[width=0.22\textwidth]{run 1081 reco/plane_5_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1081 reco/plane_6_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1081 reco/plane_7_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1081 reco/plane_8_hits.png}   \\
+    \end{tabular}
+    \caption{Run 1081 Reconstructed, Hits amount in Each Channel in Every Plane.}
+    \label{fig:Hits_amoun_colormap_1081}
+\end{figure}
+
+
+
+
+
+\FloatBarrier
+\begin{figure}[htbp]
+    \centering
+    \begin{tabular}{cccc}
+        \includegraphics[width=0.22\textwidth]{run 1093 reco/plane_1_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1093 reco/plane_2_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1093 reco/plane_3_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1093 reco/plane_4_hits.png}   \\
+        \includegraphics[width=0.22\textwidth]{run 1093 reco/plane_5_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1093 reco/plane_6_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1093 reco/plane_7_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1093 reco/plane_8_hits.png}   \\
+    \end{tabular}
+    \caption{Run 1093 Reconstructed, Hits amount in Each Channel in Every Plane.}
+    \label{fig:Hits_amoun_colormap_1093}
+\end{figure}
+
+
+
+
+
+\FloatBarrier
+\begin{figure}[htbp]
+    \centering
+    \begin{tabular}{cccc}
+        \includegraphics[width=0.22\textwidth]{run 1094 reco/plane_1_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1094 reco/plane_2_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1094 reco/plane_3_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1094 reco/plane_4_hits.png}   \\
+        \includegraphics[width=0.22\textwidth]{run 1094 reco/plane_5_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1094 reco/plane_6_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1094 reco/plane_7_hits.png} &
+        \includegraphics[width=0.22\textwidth]{run 1094 reco/plane_8_hits.png}   \\
+    \end{tabular}
+    \caption{Run 1094 Reconstructed, Hits amount in Each Channel in Every Plane.}
+    \label{fig:Hits_amoun_colormap_1094}
+\end{figure}
+
+\\
+Comparing the runs on the gap 1080(\ref{fig:Hits_amoun_colormap_1080}) and 1081(\ref{fig:Hits_amoun_colormap_1081}) we see that in run 1080 the data from plane 3 is completly disordered. While some dead channels are ok as we can reconstruct the loss data by analyzinf their surrounding channels (as can be seen in further chapters), we will not be able to compensate such misaccuracy as in run 1080, plane 3. \textbf{Hence for our "Gap run" we shall choose run 1081}
+\\ \\
+For our off gap run we see a relatively simmilar performances, the main differences are the dead channel in run 1093, plane 1 which does not appear in 1094, and the dead channel in 1094, plane 8 which does not appear in 1093. Since the deposited energy in the deeper planes is higher, the dead channels in plane 8 are more problematic than the ones on the initial planes, together with the dead channel on plane 8 of run 1094 being very close to the center of the beam, \textbf{for our "Reference run" we will use run 1093}
 
 
 
@@ -592,45 +673,70 @@ Next Lets observe this runs:
 
 
 
-\section{statistics}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\subsection{statistics}
+
+Some important note on analyzing large probabilstic data sets is to understand how to determine the accuracy and relevance of our results, when we measure many values, we want to asses the mean of this values its incertainties and other statistic parameters. We will present here how to determine such values.
+
+Mean Value - the probability weighted average of a random variable
 \begin{equation}
     \mu = E[x] = \sum _i x_1 \cdot p(x_i)
 \end{equation}
 
+If all events have equal probabilities:
 \begin{equation}
     \mu = E[x] = \frac{1}{N} \sum _i x_i
 \end{equation}
 
 
-
+Standard Deviation - the distance from the mean where we have an effective quantity of events
 \begin{equation}
     \sigma = std =  \sqrt{Var[x]} = \frac{1}{N} \sum _i (x_i - \mu)^2
 \end{equation}
 
-for Equal probabilities for all events
-
+Standard Deviation Error Mean - the uncertainty of the mean value
 \begin{equation}
-    \sigma_{\bar{x}} = \frac{\sigma}{\sqrt{n-1}}
+    \sigma_{\mu} = \sigma_{\bar{x}} = \frac{\sigma}{\sqrt{n-1}}
 \end{equation}
 
-
+Skewness - Asymetry of the distribution
 \begin{equation}
     \gamma_1 = Skewness = E[(\frac{X-\mu}{\sigma})^3]
 \end{equation}
-
-Gaussian function
+\\ \\
+Some important distributions that our data follows:
+\\ \\
+Gaussian Distribution
 \begin{equation}
     f(x)  = A \cdot e^{-\frac{(x - \mu)^2}{2\sigma^2}}
 \end{equation}
 
-
-Gamma function
+In the Gaussian distribution, the mean and std values appear expilcitly.
+\\ \\
+Gamma Distribution
 \begin{equation}
     f(x) =  A \cdot \frac{1}{\Gamma(\alpha)\,\theta^{\alpha}} x^{\alpha - 1} e^{-x / \theta}
 \end{equation}
 
-
+In Gamma distribution, the mean and std read:
 
 \begin{equation}
     \mu = \alpha \cdot \theta \qquad , \qquad \sigma = \sqrt{\alpha} \cdot \theta
@@ -644,14 +750,67 @@ we can rewrite in our variables
 
 
 
-Gamma function in terms of $\mu$ and $\sigma$
+and write the Gamma distribution in terms of $\mu$ and $\sigma$
 \begin{equation}
     f(x) =  A \cdot \frac{1}{\Gamma((\frac{\mu}{\sigma})^2)\,\frac{\sigma^2}{\mu}^{(\frac{\mu}{\sigma})^2}} x^{(\frac{\mu}{\sigma})^2 - 1} e^{-x / \frac{\sigma^2}{\mu}}
 \end{equation}
+\\ \\
 
 
 
+\subsection{Analyzing the Shower Energies and Positions in our Reference Run - Run 1093 Reconstructed, 8 layers of tungsten}
 
+We will observe the data of the shower energies in 8 plane of silicone, for events starting at column 6 of the detector for our Reference Run (1093)
+
+
+
+\FloatBarrier
+\begin{figure}[htbp]
+    \centering
+    \begin{tabular}{cccc}
+        \includegraphics[width=0.3\textwidth]{run 1093 reco/energy_in_column_6_gaussian fit_binsize_5.png}  &
+        \includegraphics[width=0.3\textwidth]{run 1093 reco/energy_in_column_6_gaussian fit_binsize_50.png} &
+        \includegraphics[width=0.3\textwidth]{run 1093 reco/energy_in_column_6_gaussian fit_binsize_500.png}  \\
+    \end{tabular}
+    \caption{Run 1093 Reconstructed, Histogram of shower energies of events starting at column 6, the bin size from left to right are 5, 50, 500. fit to Gaussian distribution}
+    \label{fig:energies_from_column_6_gaussian_1093}
+\end{figure}
+
+
+\FloatBarrier
+\begin{figure}[htbp]
+    \centering
+    \begin{tabular}{cccc}
+        \includegraphics[width=0.3\textwidth]{run 1093 reco/energy_in_column_6_Gamma_fit_binsize_5.png}  &
+        \includegraphics[width=0.3\textwidth]{run 1093 reco/energy_in_column_6_Gamma_fit_binsize_50.png} &
+        \includegraphics[width=0.3\textwidth]{run 1093 reco/energy_in_column_6_Gamma_fit_binsize_500.png}  \\
+    \end{tabular}
+    \caption{Run 1093 Reconstructed, Histogram of shower energies of events starting at column 6, the bin size from left to right are 5, 50, 500. Fit to Gamma distribution.}
+    \label{fig:energies_from_column_6_gamma_1093}
+\end{figure}
+\\
+We see that the Gaussian fit is more accurate than the Gamma, this is because we observe the total shower energy, and since all electron arrive with the same energy of 5 GEV, the maximum deposited energy in the calorimeter is limited. Hence we do not get a right tail as in the Gamma distribution.
+\\ \\
+Now we can take the mean of all columns in the detector and get the relation between shower energy of events and their initial column.
+
+\FloatBarrier
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]
+    {run 1093 reco/shower energy vs columns all rows.png}
+    \caption{run 1093 Reconstructed, Average Shower Energy vs the Initial column of an Event. Events from all rows}
+    \label{energies_vs_columns_all_1093}
+\end{figure}
+
+
+\FloatBarrier
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]
+    {run 1093 reco/shower energy vs columns at row 6.png}
+    \caption{run 1093 Reconstructed, Average Shower Energy vs the Initial column of an Event. Events from row 6 only}
+    \label{energies_vs_columns_all_1093}
+\end{figure}
 
 
 
