@@ -221,7 +221,7 @@ def plane_hit_counts(hit_data, plane):
 
 
 # a colormap with the AMOUNT OF HITS in every channel(pad) of a chosen plane
-def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
+def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin", save = False):
     
     #  change index so that the first plane is 0 and last is 7
     plane_number = 8 - plane_number
@@ -251,7 +251,11 @@ def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin"):
     plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
     ax.set_yticks(ax.get_yticks())
     ax.set_yticklabels(range(len(ax.get_yticks())-1, -1, -1))
+    if save:
+        plt.savefig(r"Plots\TB2025 Gap\run 1080 reco" + "\\" + f"plane_{8-plane_number}_hits.png", dpi=300, bbox_inches="tight")
     plt.show()
+
+
 
 
 
@@ -846,7 +850,7 @@ def initial_X_position_DUT(hit_data, return_y = "false"):
 
 
 
-def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false", specific_Y = "false"):
+def event_shower_energy_vs_X_position(hit_data, single_pad_only = "true", specific_Y = "false"):
     
     # get only showers starting at the first plane to identify the initial location
     plane_7 = hit_data[hit_data.plane == 7]
