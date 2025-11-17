@@ -773,84 +773,12 @@ def initial_X_position_DUT(hit_data, return_y = "false"):
 
 
 
-# def event_shower_energy_vs_X_position(hit_data, single_pad_only = "false", specific_Y = "false"):
-    
-#     # get only showers starting at the first plane to identify the initial location
-#     plane_7 = hit_data[hit_data.plane == 7]
-#     if single_pad_only == "false":
-#         mask = ak.num(plane_7) > 0
-
-#     if single_pad_only == "true":
-#         mask = ak.num(plane_7) == 1
-
-#     first_plane_starting_events = hit_data[mask]
-
-#     # determine the initial location of the shower
-#     # get the data on the first plane
-#     plane_7_clean = plane_7[mask]
-#     plane_7_channel = plane_7_clean.ch
-    
-#     # get the x and y positions of each channel
-#     y, x = divmod(plane_7_channel, 20) #y is the quontinent and is the row, x is the remainder and column
-    
-#     # make x and y one dimensional
-#     x_list = x.to_list()
-#     x_ak = ak.Array(x_list)
-#     x_avg = ak.mean(x_ak, axis = 1)
-
-        
-#     # compute the shower energy for each event
-#     hit_amp_array = first_plane_starting_events.amp
-#     event_shower_amp_array = ak.sum(hit_amp_array, axis = 1)
-
-#     # calculate for a specific row if needed
-#     if specific_Y  != "false":
-#         y = ak.flatten(y)
-#         mask_Y = y == specific_Y
-#         x_avg = x_avg[mask_Y]
-#         event_shower_amp_array = event_shower_amp_array[mask_Y]
-
-#     print(len(x_avg))
-#     print(len(event_shower_amp_array))
-#     # get the average shower energy for each X position
-#     div, avg_amps, classes = rf.ak_groupby(x_avg, event_shower_amp_array)
-
-#     # plot
-#     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
-    
-#     # plot the energy avg per position vs the initial X position of the shower
-#     ax1.plot(classes, avg_amps, marker='o')
-#     ax1.set_xticks(np.arange(0, 20))
-#     ax1.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
-#     ax1.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
-#     ax1.set_xlabel('X Position at Shower Initiation [Pad Column]')
-#     ax1.set_ylabel('AVG Shower Energy')
-    
-#     if specific_Y == "false":
-#         ax1.set_title('Average Shower Energy vs Initial Location')
-    
-#     else:
-#         ax1.set_title(f'Average Shower Energy vs Initial Location, y = {specific_Y}')
-
-#     # show the amounnt of hits in each plane on a bar chart
-#     bins = np.arange(0, 21, 1) 
-#     ax2.hist(x_avg, bins=bins, edgecolor='black', rwidth=0.8)
-#     ax2.set_xticks(np.arange(0, 20) + 0.5)  # shift by 0.5
-#     ax2.set_xticklabels(np.arange(0, 20)) 
-#     ax2.grid(True, which='both', axis='x', linestyle='--', alpha=0.7)
-#     ax2.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
-#     ax2.set_xlabel('X Position [Pad Column]')
-#     ax2.set_ylabel('amount of hits')
-#     ax2.set_title('Amount of Events initiating in Each Column of the Sensor')
-    
-#     plt.show()
 
 
 
 
 
-
-def event_shower_energy_vs_X_position(hit_data, single_pad_only = "true", specific_Y = "false"):
+def event_shower_energy_vs_X_position(hit_data, single_pad_only = "true", specific_Y = "false", Log_Scale = False):
     
     # get only showers starting at the first plane to identify the initial location
     plane_7 = hit_data[hit_data.plane == 7]
@@ -898,13 +826,12 @@ def event_shower_energy_vs_X_position(hit_data, single_pad_only = "true", specif
     sigmas = ak.std(energies_per_column, axis=1)
 
     # mean unsertinty
-    sem = sigmas / np.sqrt(ak.num(energies_per_column, axis=1))
+    sem = sigmas / np.sqrt(ak.num(energies_per_column-1, axis=1))
 
     # plot
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
     
     # plot the energy avg per position vs the initial X position of the shower
-    # ax1.plot(classes, avg_amps, marker='o')
     ax1.errorbar(
     classes, avg_amps, yerr=sem, fmt='-o',ecolor='black', elinewidth=1, capsize=4, capthick=1, markerfacecolor='blue', markersize=6, label='Data with error')
 
@@ -914,6 +841,7 @@ def event_shower_energy_vs_X_position(hit_data, single_pad_only = "true", specif
     ax1.set_xlabel('X Position at Shower Initiation [Pad Column]')
     ax1.set_ylabel('AVG Shower Energy')
     
+    # set title for chosen Y
     if specific_Y == "false":
         ax1.set_title('Average Shower Energy vs Initial Location')
     
@@ -930,6 +858,9 @@ def event_shower_energy_vs_X_position(hit_data, single_pad_only = "true", specif
     ax2.set_xlabel('X Position [Pad Column]')
     ax2.set_ylabel('amount of hits')
     ax2.set_title('Amount of Events initiating in Each Column of the Sensor')
+    if Log_Scale:
+        ax2.set_yscale("log")
+
     
     plt.show()
 
@@ -1193,8 +1124,8 @@ def Radii_from_Initial_position(hit_data):
 
 
 
-# Histogram of ENERGies in all showers starting at a certain position
-def Histo_shower_energy_for_X_position(hit_data, number_of_highest_ocupied_columns, single_pad_only = "false", specific_Y = "false", normalize = "false"):
+# Histograms of shower ENERGIES of events from the most occupied columns
+def Histo_shower_energy_for_X_position(hit_data, number_of_highest_ocupied_columns, single_pad_only = "true", specific_Y = "false", normalize = "false"):
     
     # get only showers starting at the first plane to identify the initial location
     plane_7 = hit_data[hit_data.plane == 7]
@@ -1308,49 +1239,6 @@ def Histo_shower_energy_for_X_position(hit_data, number_of_highest_ocupied_colum
 
 
 
-# returns histogram of the energie of events starting at the stated X position
-def shower_energy_histo_single_location(hit_data, Position):
-
-    # get only showers starting at the first plane to identify the initial location
-    plane_7 = hit_data[hit_data.plane == 7]
-    mask = ak.num(plane_7) > 0
-    first_plane_starting_events = hit_data[mask]
-
-    # determine the initial location of the shower
-    # get the data on the first plane
-    plane_7_clean = plane_7[mask]
-    plane_7_channel = plane_7_clean.ch
-
-    # divide by x positions
-    y, x = divmod(plane_7_channel, 20) #y is the quontinent and is the row, x is the remainder and column
-    x_list = x.to_list()
-    x_ak = ak.Array(x_list)
-    x_avg = ak.mean(x_ak, axis = 1)
-    
-    # compute the shower energy for each event
-    hit_amp_array = first_plane_starting_events.amp
-    event_shower_amp_array = ak.sum(hit_amp_array, axis = 1)
-    
-    # get the shower energy for the X position for all events
-    amps_divided_by_class, avg_amps, classes = rf.ak_groupby(x_avg, event_shower_amp_array)
-    
-    # div, avg_amps, classes = ak_groupby(x_avg, event_shower_amp_array)
-    amps_class_position = amps_divided_by_class[amps_divided_by_class.classes == Position]
-    amps_position = amps_class_position.data
-    amps_position_clean = ak.flatten(amps_position[ak.num(amps_position) > 0])
-    avg_amp = np.round(ak.mean(amps_position_clean))
-
-    # Plot
-    counts, bins = np.histogram(amps_position_clean, bins=7000, range=(0,14000))
-    peak_idx = np.argmax(counts)
-    peak_center = (bins[peak_idx] + bins[peak_idx + 1]) / 2
-    plt.hist(amps_position_clean, bins=7001, range=(0,14000), label=f"avg = {avg_amp} \n peak_bin = {peak_center}")
-    plt.grid()
-    plt.legend()
-    plt.show()
-
-
-
 
 
 
@@ -1427,7 +1315,7 @@ def frac_contained_energy_radius(data_with_distances, energy_percentage):
 
 
 
-def frac_energy_radii_histo(hit_data_with_distances, fraction_of_energy, calculate_R=False):
+def frac_energy_radii_histo(hit_data_with_distances, fraction_of_energy, calculate_R=False, bin_size = 0.5):
 
     if calculate_R:
         hit_data_with_distances = rf.Radii_from_Initial_position(hit_data_with_distances)
@@ -1435,7 +1323,7 @@ def frac_energy_radii_histo(hit_data_with_distances, fraction_of_energy, calcula
     R_at_frac = rf.frac_contained_energy_radius(hit_data_with_distances, fraction_of_energy)
 
     fig, ax1 = plt.subplots(figsize=(8, 5))
-    bins = np.arange(0, ak.max(R_at_frac) + 0.5, 0.5)
+    bins = np.arange(0, ak.max(R_at_frac) + bin_size, bin_size)
     counts, edges, patches = ax1.hist(R_at_frac, bins=bins, color='skyblue', edgecolor='black')
 
     ax1.set_xlabel("Radius [Pad Units]")
@@ -1469,6 +1357,123 @@ def frac_energy_radii_histo(hit_data_with_distances, fraction_of_energy, calcula
 
     plt.tight_layout()
     plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# returns histogram of the energie of events starting at the stated X position
+def shower_energy_histo_single_location(hit_data, Position, specific_Y = "all_rows", bin_size = 50):
+
+    # get only showers starting at the first plane to identify the initial location
+    plane_7 = hit_data[hit_data.plane == 7]
+    mask = ak.num(plane_7) == 1
+    first_plane_starting_events = hit_data[mask]
+
+    # determine the initial location of the shower
+    # get the data on the first plane
+    plane_7_clean = plane_7[mask]
+    plane_7_channel = plane_7_clean.ch
+
+    # divide by x positions
+    y, x = divmod(plane_7_channel, 20) #y is the quontinent and is the row, x is the remainder and column
+    x_list = x.to_list()
+    x_ak = ak.Array(x_list)
+    x_avg = ak.mean(x_ak, axis = 1)
+    
+    # compute the shower energy for each event
+    hit_amp_array = first_plane_starting_events.amp
+    event_shower_amp_array = ak.sum(hit_amp_array, axis = 1)
+
+    # Filter for specific row only
+    if specific_Y  != "all_rows":
+        y = ak.flatten(y)
+        mask_Y = y == specific_Y
+        x_avg = x_avg[mask_Y]
+        event_shower_amp_array = event_shower_amp_array[mask_Y]
+        title = f'Energy Histograms for events starting at different initial columns, y = {specific_Y}'
+    
+    
+    
+    # get the shower energy for the X position for all events
+    amps_divided_by_class, avg_amps, classes = rf.ak_groupby(x_avg, event_shower_amp_array)
+    
+    amps_class_position = amps_divided_by_class[amps_divided_by_class.classes == Position]
+    amps_position = amps_class_position.data
+    amps_position_clean = ak.flatten(amps_position[ak.num(amps_position) > 0])
+    
+    
+
+    # Histogram
+    max_range = 12000
+    range = (0, max_range)
+    bins = np.arange(0, max_range + 1, bin_size)
+    
+    # most common energy (peak of the histo)
+    counts, bins = np.histogram(amps_position_clean, bins = bins, range=range)
+    peak_idx = np.argmax(counts)
+    peak_center = (bins[peak_idx] + bins[peak_idx + 1]) / 2
+    
+
+    # Histo Mean
+    avg_amp = ak.mean(amps_position_clean)
+    
+    # Histo Standard deveiation (how spread is the data) marked as sigma
+    std = ak.std(amps_position_clean)
+
+    # standard deviation error of mean (how uncertain the mean is) marked as sigma_mean
+    SEM = std/np.sqrt(len(amps_position_clean))
+    
+
+
+    # Multi-line string for the box
+    textstr = '\n'.join((
+        f'Mean = {avg_amp:.2f}',
+        f'Peak = {peak_center:.2f}',
+        rf'$\sigma$ = {std:.2f}',
+        rf'$\sigma_{{\mu}}$ = {SEM:.2f}',
+        # f'RMS = {RMS:.2f}',
+        # f'STD = {STD:,}'
+    ))
+
+    # Place the box inside the axes
+    plt.text(
+        0.65, 0.75, textstr, transform=plt.gca().transAxes,
+        fontsize=10, verticalalignment='top',
+        bbox=dict(boxstyle='round', facecolor='white', alpha=0.8)
+        )
+
+
+    # plot the histogram with matplotlib
+    plt.hist(amps_position_clean, bins = bins, range=range, label=f"avg = {avg_amp} \n peak = {peak_center}")
+    plt.grid()
+    plt.xlabel(f"Energy in Column {Position}")
+    plt.ylabel("Counts")
+    plt.title(f'Energy Histograms for events starting at different initial columns, y =  {specific_Y}')
+    plt.show()
+
+
+
+
+
+
+
+
+
 
 
 
