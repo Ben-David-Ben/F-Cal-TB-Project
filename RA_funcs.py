@@ -181,6 +181,42 @@ def get_ROOT_data_zip_RECO(run_number, tlu = "false", time = "false", toa = "fal
 
 
 
+# extracts arrays from ROOT file and zip them for every hit, FOR RECONSTRUCTED files
+def get_ROOT_data_zip_RECO_11(run_number, tlu = "false", time = "false", toa = "false" ):
+
+    file_name = f"TB_FIRE\TB_reco\TB_FIRE_{run_number}_raw_reco.root"
+    # open the file
+    infile = uproot.open(file_name)
+    # print("Folders:", infile.keys())
+
+
+    # open the first "folder" hits
+    hits = infile['Hits']
+    # print("Hits:")
+    # hits.show()
+
+    # create the arrays from all data
+    amp = hits['amplitude'].array()
+    plane = hits['plane_ID'].array()
+    channel = hits['ch_ID'].array()
+    if tlu == "true":
+        tlu = hits['TLU_number'].array()
+    if toa == "true":
+        toa = hits['toa'].array()
+    if time == "true":
+        time = hits['timestamp'].array()
+
+    # create a zipped array of data for every hit(reading in the sensor)
+    hit_data = ak.zip({ "plane":plane, "ch":channel, "amp":amp})
+    print(f"{run_number} RECONSTRUCTED finished")
+
+    return hit_data
+
+
+
+
+
+
 
 
 
