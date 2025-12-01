@@ -9,3 +9,11 @@ Missions:
 
 
 - finish the dead channels list function
+
+- take y from 0 to -5 and -5 to -10
+
+- add errors to plots
+
+- add chi squared filter and send data to wolfgang
+
+try to see the profile  across a pad
