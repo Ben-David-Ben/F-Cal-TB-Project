@@ -223,10 +223,117 @@ def get_ROOT_data_zip_RECO_11(run_number, tlu = "false", time = "false", toa = "
 
 
 
+# a function that get 2 arrays, and groups them by categories of the first 1, returns the grouped data and the classes(categories)
+def ak_groupby_for_scope(classes, data):
+    
+
+    # zip the arrays
+    zipped_arrays = ak.zip({ "classes":classes, "data":data} ,depth_limit=1)
+
+    # sort by classes
+    data_classes_sorted = zipped_arrays[ak.argsort(zipped_arrays.classes)]
+
+    # divide to subarrays by classes
+    lengths = ak.run_lengths(data_classes_sorted.classes)
+
+    # return lengths, data_classes_sorted
+    data_by_class_divided = ak.unflatten(data_classes_sorted, lengths)
+
+    # get the classes list
+    reduced_classes = data_by_class_divided.classes[..., 0]
+
+
+    # return data_by_class_divided 
+    return data_by_class_divided, reduced_classes
 
 
 
 
+
+
+
+
+
+
+# Merge DUT and Telescope Data - takes run number and returnes zipped array with telescope files
+def DUT_TELE_merge(run_number):
+
+    # read DUT
+    dut = uproot.open(f"TB_FIRE/TB_reco/TB_FIRE_{run_number}_raw_reco.root")
+    hits = dut['Hits']
+    TLU = hits['TLU_number'].array()
+    plane = hits['plane_ID'].array()
+    channel = hits['ch_ID'].array()
+    amp = hits['amplitude'].array()
+    hit_data = ak.zip({ "plane":plane, "ch":channel, "amp":amp})
+
+    # sort DUT data to have a single TLU per event
+
+    TLU_data, TLU = ak_groupby_for_scope(TLU,hit_data)
+    single_TLU_data = TLU_data[ak.num(TLU_data) == 1]
+    single_TLU_data = single_TLU_data[ak.num(single_TLU_data) > 0]
+    
+    # read tele
+    tele = uproot.open(f"TB_FIRE/TB_reco/run_{run_number}_telescope.root")
+    tracks = tele['TrackingInfo']['Tracks']
+    trigID = tracks['triggerid'].array()
+    chi2_ndof = tracks['chi2'].array() / tracks['ndof'].array()
+    x = tracks['x_dut'].array()
+    y = tracks['y_dut'].array()
+    tele_data = ak.zip({"x":x, "y":y, "chired":chi2_ndof})
+
+    # sort TELE data by trigger ID
+    trigID_data, trigID = ak_groupby_for_scope(ak.flatten(trigID), tele_data)
+    
+    # events with 1 triger ID
+    single_trigID = trigID_data[ak.num(trigID_data) == 1]
+
+    # events with one telescope track only
+    single_track_with_zeros = single_trigID[ak.num(single_trigID.data, axis = 2) == 1]
+    single_track_data = single_track_with_zeros[ak.num(single_track_with_zeros) > 0]
+
+    # create mask to get only data with TLU and trigger ID by substraction
+
+    # get indices for events that with matching TLU and TriggerID
+    single_TLU_index = single_TLU_data.classes
+    single_track_index = single_track_data.classes
+    mask_dut = np.isin(single_TLU_index, single_track_index)
+    mask_tele = np.isin(single_track_index, single_TLU_index)
+
+    # get the data from dut and tele for corresponding events (apply mask)
+    final_dut_data = single_TLU_data[mask_dut]
+    final_tele_data = single_track_data[mask_tele]
+
+    # combine DUT and TELE data
+    final_dut_hit_data = final_dut_data.data
+    final_tele_fit_data = final_tele_data.data
+    # return final_dut_hit_data, final_tele_fit_data
+    merged = ak.zip({"hits":final_dut_hit_data, "tele":final_tele_fit_data},depth_limit=1)
+
+    return merged
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"data analysis"
 
 
 
@@ -1887,4 +1994,134 @@ def single_column_energy_Gamma_fit(hit_data, Position, specific_Y = "all_rows", 
     plt.ylabel("Counts")
     # plt.title(f'Energy Histograms for events starting at different initial columns, y =  {specific_Y}')
     plt.title(f'Energies of Events Starting at Column {Position}, y =  {specific_Y}, \n Gamma fit')
+    plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"scope works"
+
+
+
+
+
+# filter chi2
+def filter_chi2_scope_data(hit_data_scope, upper_chi2_bound):
+    mask = hit_data_scope.tele.chired < upper_chi2_bound
+    filtered_data = hit_data_scope[mask]
+    filtered_data_clean = filtered_data[ak.num(filtered_data.tele) > 0]
+    return filtered_data_clean
+
+
+
+
+
+
+
+# show the average amp vs x position and perform gaussian + linear fit
+def gap_avg_eneregies_per_X_fit(hit_data_scope, y_min, y_max):
+    y_max, y_min = 10, -10
+
+    data = hit_data_scope[(hit_data_scope.y < y_max) & (hit_data_scope.y > y_min)]
+    data = data[ak.num(data) > 0]
+
+    # compute X and E
+    X = -ak.to_numpy(ak.mean(data.x, axis=1))
+    X = np.round(X,1)
+    E = ak.sum(data.amp, axis=1)
+
+    # grouping
+    amp, mean, pos = rf.ak_groupby(X, E, round="false")
+    amp_avg = ak.mean(amp.data, axis=1)
+    amp_std = ak.std(amp.data, axis=1) / np.sqrt(ak.num(amp.data, axis=1) - 1)
+
+    # mask
+    # mask = (pos > -20) & (pos < 15)
+    mask = (pos > min(X)) & (pos < max(X))
+
+    # convert Awkward → Numpy
+    pos_m = ak.to_numpy(pos[mask])
+    amp_m = ak.to_numpy(amp_avg[mask])
+    err_m = ak.to_numpy(amp_std[mask])
+
+    # --- Gaussian model ---
+    def gaussian_linear(x, c, m, A, mu, sigma):
+        return c + m*x - A * np.exp(-(x - mu)**2 / (2 * sigma**2))
+
+    # initial guesses
+    c0 = 6000
+    m0 = 0
+    A0 = np.min(amp_m)
+    # A0 = np.max(amp_m)
+    # mu0 = pos_m[np.argmin(amp_m)]
+    mu0 = 0
+    sigma0 = 3
+    # sigma0 = (np.max(pos_m) - np.min(pos_m)) / 6
+
+    # fit
+    popt, pcov = curve_fit(gaussian_linear, pos_m, amp_m, p0=[c0, m0, A0, mu0, sigma0])
+    c_fit, m_fit, A_fit, mu_fit, sigma_fit = popt
+
+    print("Gaussian fit parameters:")
+    print(f"c     = {c_fit:.3f}")
+    print(f"m     = {m_fit:.3f}")
+    print(f"theta     = {np.arctan(m_fit):.3f} Radians")
+    print(f"A     = {A_fit:.3f}")
+    print(f"mu    = {mu_fit:.3f}")
+    print(f"sigma = {sigma_fit:.3f}")
+
+    # make smooth curve for plotting
+    x_fit = np.linspace(np.min(pos_m), np.max(pos_m), 500)
+    y_fit = gaussian_linear(x_fit, *popt)
+
+    # --- plotting ---
+    plt.errorbar(pos_m, amp_m, yerr=err_m, fmt='o', capsize=4, label="data")
+    plt.plot(x_fit, y_fit, 'r-', label="Gaussian fit", zorder=10)
+
+    plt.grid()
+    plt.xlabel("pos")
+    plt.ylabel("amplitude (avg ± std)")
+    plt.legend()
     plt.show()
