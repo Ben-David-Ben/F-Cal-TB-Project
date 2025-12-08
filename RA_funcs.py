@@ -327,6 +327,89 @@ def DUT_TELE_merge(run_number):
 
 
 
+def gal_scope_merge(run_number):
+    import gc
+    import pandas as pd
+    f = uproot.open(f"TB_FIRE/TB_reco/TB_FIRE_{run_number}_raw_reco.root")
+    tele = uproot.open(f"TB_FIRE/TB_reco/run_{run_number}_telescope.root")
+
+    arrs_events = f["Hits"].arrays(["TLU_number", "amplitude", "plane_ID", "ch_ID"], library="ak")
+    tele_events = tele["TrackingInfo/Tracks"].arrays(["triggerid", "x_dut", "y_dut"], library="ak")
+
+    arrs_events.TLU_number
+
+    df_dut = pd.DataFrame({
+        "TLU": ak.to_list(np.sort(arrs_events.TLU_number)),
+        "amplitude": ak.to_list(arrs_events.amplitude),
+        "plane_ID": ak.to_list(arrs_events.plane_ID),
+        "ch_ID": ak.to_list(arrs_events.ch_ID)
+    })
+
+    nonempty_mask = (ak.num(tele_events["x_dut"]) == 1) & (ak.num(tele_events["y_dut"]) == 1)
+    
+    tele_trig_filtered = tele_events["triggerid"][nonempty_mask]
+    tele_x_filtered    = tele_events["x_dut"][nonempty_mask]
+    tele_y_filtered    = tele_events["y_dut"][nonempty_mask]
+
+    flat_triggers = ak.to_list(ak.flatten(tele_trig_filtered, axis=None))
+    flat_x       = ak.to_list(ak.flatten(tele_x_filtered, axis=None))
+    flat_y       = ak.to_list(ak.flatten(tele_y_filtered, axis=None))
+
+    df_tele = pd.DataFrame({
+        "triggerid": np.sort(flat_triggers),
+        "x_dut": flat_x,
+        "y_dut": flat_y
+    })
+   
+    print("DataFrames constructed.")
+
+    df_tele = df_tele[df_tele["triggerid"].isin(df_dut["TLU"])]
+    df_dut = df_dut[df_dut["TLU"].isin(df_tele["triggerid"])]
+    
+    # Group DUT hits by TLU
+    grouped_dut = df_dut.groupby("TLU", sort=False).agg({
+        "amplitude": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])],
+        "plane_ID": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])],
+        "ch_ID": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])]
+    }).reset_index()
+
+    # Group telescope hits by triggerid
+    grouped_tele = df_tele.groupby("triggerid", sort=False).agg({
+        "x_dut": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])],
+        "y_dut": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])]
+    }).reset_index().rename(columns={"triggerid": "TLU"})
+
+
+    print("DataFrames grouped by TLU/triggerid")
+    # Merge DUT and telescope on TLU
+    merged = pd.merge(grouped_dut, grouped_tele, on="TLU", how="left")
+
+    print("DataFrames merged")
+
+    del flat_triggers, flat_x, flat_y, df_dut, df_tele, grouped_dut, grouped_tele
+    gc.collect()
+
+    print("collected garbage")
+
+    events_awk = ak.zip({
+        "TLU": ak.Array(merged["TLU"].tolist()),
+        "Amplitudes": ak.Array(merged["amplitude"].tolist()),
+        "Planes": ak.Array(merged["plane_ID"].tolist()),
+        "Channels": ak.Array(merged["ch_ID"].tolist()),
+        "x_dut": ak.flatten(ak.Array(merged["x_dut"].tolist()),axis=1),
+        "y_dut": ak.flatten(ak.Array(merged["y_dut"].tolist()),axis=1)
+    })
+
+    return events_awk
+
+
+
+
+
+
+
+
+
 
 
 
