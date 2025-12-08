@@ -2050,7 +2050,7 @@ def single_column_energy_Gamma_fit(hit_data, Position, specific_Y = "all_rows", 
 # filter chi2
 def filter_chi2_scope_data(hit_data_scope, upper_chi2_bound):
     mask = hit_data_scope.tele.chired < upper_chi2_bound
-    filtered_data = hit_data_scope[mask]
+    filtered_data = hit_data_scope[ak.flatten(mask)]
     filtered_data_clean = filtered_data[ak.num(filtered_data.tele) > 0]
     return filtered_data_clean
 
@@ -2059,9 +2059,8 @@ def filter_chi2_scope_data(hit_data_scope, upper_chi2_bound):
 
 
 
-
 # show the average amp vs x position and perform gaussian + linear fit
-def gap_avg_eneregies_per_X_fit(hit_data_scope, y_min, y_max):
+def gap_avg_eneregies_per_X_fit(hit_data_scope, y_min, y_max, x_min = "false", x_max = "false"):
     y_max, y_min = 10, -10
 
     data = hit_data_scope[(hit_data_scope.y < y_max) & (hit_data_scope.y > y_min)]
@@ -2078,8 +2077,11 @@ def gap_avg_eneregies_per_X_fit(hit_data_scope, y_min, y_max):
     amp_std = ak.std(amp.data, axis=1) / np.sqrt(ak.num(amp.data, axis=1) - 1)
 
     # mask
-    # mask = (pos > -20) & (pos < 15)
-    mask = (pos > min(X)) & (pos < max(X))
+    if (x_min == "false") & (x_max == "false"):
+        mask = (pos > min(X)) & (pos < max(X))
+    else:
+        mask = (pos > x_min) & (pos < x_max)
+
 
     # convert Awkward → Numpy
     pos_m = ak.to_numpy(pos[mask])
@@ -2125,3 +2127,55 @@ def gap_avg_eneregies_per_X_fit(hit_data_scope, y_min, y_max):
     plt.ylabel("amplitude (avg ± std)")
     plt.legend()
     plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+# reconstructed data for dead pads - returns an array with the reconstruccted value of the pad in each event
+def pads_reconstruct(hit_data,plane, channel, plot = False):
+
+    # get the data from previous plane
+    previous_plane = hit_data[hit_data.plane == plane - 1]
+    prev_plane_same_ch = previous_plane[previous_plane.ch == channel]
+    prev_plane_same_ch_zeros = ak.where(ak.num(prev_plane_same_ch.amp) == 0, [[0]], prev_plane_same_ch.amp)
+
+    # get the data from plane 5
+    next_plane = hit_data[hit_data.plane == plane + 1]
+    next_plane_same_ch = next_plane[next_plane.ch == 105]
+    next_plane_same_ch_zeros = ak.where(ak.num(next_plane_same_ch.amp) == 0, [[0]], next_plane_same_ch.amp)
+
+    # average the data 
+    reco_ch_data = (next_plane_same_ch_zeros + prev_plane_same_ch_zeros) / 2
+    # plane_4_ch_105_reco_null = reco_ch_data[reco_ch_data > 0]
+    # plane_4_ch_105_reco_clean = plane_4_ch_105_reco_null[ak.num(plane_4_ch_105_reco_null) > 0]
+
+    if plot:
+        # plot
+        data_reco = np.array(reco_ch_data)
+        print(data_reco.min())
+        # Define bin width
+        bin_width = 25
+        # Create bins from min to max with step of 5
+        bins = np.arange(data_reco.min(), data_reco.max() + bin_width, bin_width)
+        # Plot histogram
+        plt.figure()
+        plt.hist(data_reco, bins=bins, alpha = 1, label = "Reconstructed")
+        plt.grid(True)
+        plt.legend()
+        plt.xlim(0, data_reco.max())
+        # Labels
+        plt.xlabel("Energy")
+        plt.ylabel("Counts")
+        plt.title("plane 4 ch 105 -Origin and reconstructed data, Z axis avg")
+        # plt.yscale("log")
+        plt.show()
+
+    return reco_ch_data

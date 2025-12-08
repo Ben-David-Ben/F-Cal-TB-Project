@@ -18,3 +18,5 @@ Missions:
 - mal davd about the 10egthy0 plane 3
 
 - geometrc average wth neghbors
+
+- see why the data in 1081 in different for me and for gal
