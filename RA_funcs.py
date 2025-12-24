@@ -2063,12 +2063,13 @@ def single_column_energy_Gamma_fit(hit_data, Position, specific_Y = "all_rows", 
 
 
 
-
+"the following 3 functions work for the pad reconstruction, try to add the data in batches and create the zipped arrays only in the end"
 
 
 
 
 # reconstructed data for dead pads - returns an array with the reconstruccted value of the pad in each event
+"works!"
 def pads_reconstruct(hit_data,plane, channel, plot = False, yscale = "linear"):
 
     # get the data from previous plane
@@ -2078,7 +2079,7 @@ def pads_reconstruct(hit_data,plane, channel, plot = False, yscale = "linear"):
 
     # get the data from plane 5
     next_plane = hit_data[hit_data.plane == plane + 1]
-    next_plane_same_ch = next_plane[next_plane.ch == 105]
+    next_plane_same_ch = next_plane[next_plane.ch == channel]
     next_plane_same_ch_zeros = ak.where(ak.num(next_plane_same_ch.amp) == 0, [[0]], next_plane_same_ch.amp)
 
     # average the data 
@@ -2103,9 +2104,122 @@ def pads_reconstruct(hit_data,plane, channel, plot = False, yscale = "linear"):
         # Labels
         plt.xlabel("Energy")
         plt.ylabel("Counts")
-        plt.title("plane 4 ch 105 -Origin and reconstructed data, Z axis avg")
+        plt.title(f"plane {plane} ch {channel} -Origin and reconstructed data, Z axis avg")
         # plt.yscale("log")
         plt.yscale(yscale)
         plt.show()
 
     return reco_ch_data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# add the reconstructed data of the dead pad to the hits data
+def add_reconstruct_data_single_dead_pad(data, plane, pad, scope_data = True):
+
+    if scope_data:
+        hit_data = data.hits
+
+    # get the array of the reconstructed data
+    reco_pad = pads_reconstruct(hit_data, plane, pad)
+
+    # turn empty data in the reconstructed results to zeros
+    reco_amp = ak.fill_none(ak.firsts(reco_pad), 0.0)
+
+    # zip the reconstructed data to plane and ch of dead pad
+    reco_pad_plane_ch = ak.zip(
+        {
+            "plane": ak.full_like(reco_amp, plane, dtype="int32"),
+            "ch":    ak.full_like(reco_amp, pad, dtype="int32"),
+            "amp":   reco_amp,
+        })
+
+    # turn the reconstructed data into subarrays per event
+    reco1 = ak.unflatten(reco_pad_plane_ch, 1)
+
+    # turn all zeros to empty spaces
+    keep = reco_amp != 0
+    reco_to_add = ak.fill_none(ak.mask(reco1, keep), [])
+
+    # combine with original data
+    hits_with_reco_pad = ak.concatenate([hit_data, reco_to_add], axis=1)
+
+    data_with_reco_pad = ak.with_field(data, hits_with_reco_pad, "hits")
+
+    return data_with_reco_pad
+
+
+
+
+
+
+
+
+
+
+
+
+
+"works!"
+# reconstruct the dead channels around the shower in a run - radius of reco dtermines the distance from the center of the shower to be reconstructed
+def reconstruct_data_all_dead_pads(data, radius, path_to_diagnostics, number_of_planes = 8):
+
+# find the center of the shower
+
+    # single hit in the first plane
+    first_plane1 = data.hits[data.hits.plane == 0]
+    first_plane = first_plane1[ak.num(first_plane1) == 1]
+
+    # ch activated in the first plane
+    first_plane_ch = first_plane.ch
+
+    # define center of the shower as the most activated pad in the first plane 
+    counted_channels, counts = np.unique(ak.flatten(first_plane_ch), axis=0, return_counts=True)
+    imax = np.argmax(counts)
+    central_pad = counted_channels[imax]
+    print("shower center:", central_pad)   
+    
+
+# get the dead channels list
+
+    # list of all dead channels
+    all_dead_channels = rf.channels_diagnostics(path_to_diagnostics, number_of_planes)
+    print("amount of dead channels:", len(all_dead_channels))
+    
+    # get the pads in the wanted radius
+    base = list(range(central_pad - radius, central_pad + radius +1))
+    pads = [x + 20*i for i in range(-radius, radius+1) for x in base]
+    
+    # get the dead channels only from the wanted radius
+    radius_mask = np.isin(all_dead_channels.channel_ID, pads)
+    dead_channels_in_radius1 = all_dead_channels[radius_mask] 
+
+    # delete dead channels starting at the first plane as we cant average for them
+    dead_channels_in_radius = dead_channels_in_radius1[dead_channels_in_radius1.plane_ID > 0]
+
+
+# add the reconstructed data
+    counter = len(dead_channels_in_radius)
+    for channel in dead_channels_in_radius:
+        data = add_reconstruct_data_single_dead_pad(data, channel.plane_ID, channel.channel_ID)
+        print(channel)
+        counter -= 1
+        print(counter, "channels left")
+    
+    
+    return data

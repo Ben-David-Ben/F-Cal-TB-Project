@@ -343,7 +343,17 @@ def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_
 
 
 
-"channel reconstruction"
+
+
+
+
+
+
+
+
+
+
+
 
 # plots the XY distribution of events that started in the wanted pads
 def pads_xy(data, central_pad):
