@@ -20,3 +20,7 @@ Missions:
 - geometrc average wth neghbors
 
 - see why the data in 1081 in different for me and for gal
+
+- plot 1 pad XY
+
+- gap length

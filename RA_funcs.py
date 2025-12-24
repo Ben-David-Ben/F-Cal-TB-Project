@@ -9,6 +9,9 @@ import RA_funcs as rf
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 from scipy.special import gamma
+import Scope_funcs as sf
+
+
 
 
 print("imports work")
@@ -223,187 +226,139 @@ def get_ROOT_data_zip_RECO_11(run_number, tlu = "false", time = "false", toa = "
 
 
 
-# a function that get 2 arrays, and groups them by categories of the first 1, returns the grouped data and the classes(categories)
-def ak_groupby_for_scope(classes, data):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"Bad Channels Diagnostics"
+
+
+
+
+# get the dead channels (state the path to the diagnostic file and number of planes in your run)
+def channels_diagnostics(path_to_file, number_of_planes, dead_channel_list = True):
     
+    # open the diagnostic file
+    infile = uproot.open(path_to_file)
 
-    # zip the arrays
-    zipped_arrays = ak.zip({ "classes":classes, "data":data} ,depth_limit=1)
-
-    # sort by classes
-    data_classes_sorted = zipped_arrays[ak.argsort(zipped_arrays.classes)]
-
-    # divide to subarrays by classes
-    lengths = ak.run_lengths(data_classes_sorted.classes)
-
-    # return lengths, data_classes_sorted
-    data_by_class_divided = ak.unflatten(data_classes_sorted, lengths)
-
-    # get the classes list
-    reduced_classes = data_by_class_divided.classes[..., 0]
-
-
-    # return data_by_class_divided 
-    return data_by_class_divided, reduced_classes
-
-
-
-
-
-
-
-
-
-
-# Merge DUT and Telescope Data - takes run number and returnes zipped array with telescope files
-def DUT_TELE_merge(run_number):
-
-    # read DUT
-    dut = uproot.open(f"TB_FIRE/TB_reco/TB_FIRE_{run_number}_raw_reco.root")
-    hits = dut['Hits']
-    TLU = hits['TLU_number'].array()
-    plane = hits['plane_ID'].array()
-    channel = hits['ch_ID'].array()
-    amp = hits['amplitude'].array()
-    hit_data = ak.zip({ "plane":plane, "ch":channel, "amp":amp})
-
-    # sort DUT data to have a single TLU per event
-
-    TLU_data, TLU = ak_groupby_for_scope(TLU,hit_data)
-    single_TLU_data = TLU_data[ak.num(TLU_data) == 1]
-    single_TLU_data = single_TLU_data[ak.num(single_TLU_data) > 0]
+    # get the isgood, plane_ID and channel_ID data for 8 planes
+    if number_of_planes < 10:
+        bad_channels_result = infile['Diagnostics;1']['BadChannelResults']
+        plots_rows = 2
     
-    # read tele
-    tele = uproot.open(f"TB_FIRE/TB_reco/run_{run_number}_telescope.root")
-    tracks = tele['TrackingInfo']['Tracks']
-    trigID = tracks['triggerid'].array()
-    chi2_ndof = tracks['chi2'].array() / tracks['ndof'].array()
-    x = tracks['x_dut'].array()
-    y = tracks['y_dut'].array()
-    tele_data = ak.zip({"x":x, "y":y, "chired":chi2_ndof})
-
-    # sort TELE data by trigger ID
-    trigID_data, trigID = ak_groupby_for_scope(ak.flatten(trigID), tele_data)
+    # get the isgood, plane_ID and channel_ID data for 8 planes
+    if number_of_planes > 10:
+        bad_channels_result = infile['BadChannelResults']
+        plots_rows = 3
+        
+    isgood = bad_channels_result['isGood'].array()
+    plane_ID = bad_channels_result['planeID'].array()
+    channel_ID = bad_channels_result['channelID'].array()
     
-    # events with 1 triger ID
-    single_trigID = trigID_data[ak.num(trigID_data) == 1]
+    print("we got the data")
 
-    # events with one telescope track only
-    single_track_with_zeros = single_trigID[ak.num(single_trigID.data, axis = 2) == 1]
-    single_track_data = single_track_with_zeros[ak.num(single_track_with_zeros) > 0]
+    # attach channels to planes
+    Y, X = divmod(channel_ID, 20)
+    XY = ak.zip({ "X":X, "Y":Y})
+    one_d_channels = ak.zip({ "plane_ID":plane_ID, "channel_ID":channel_ID})
+    all_channels = ak.zip({ "plane_ID":plane_ID, "channel_ID":XY})
 
-    # create mask to get only data with TLU and trigger ID by substraction
+    # get the good and bad channels
+    bad_channels = all_channels[~isgood]
+    bad_channels_one_d = one_d_channels[~isgood]
 
-    # get indices for events that with matching TLU and TriggerID
-    single_TLU_index = single_TLU_data.classes
-    single_track_index = single_track_data.classes
-    mask_dut = np.isin(single_TLU_index, single_track_index)
-    mask_tele = np.isin(single_track_index, single_TLU_index)
+    if dead_channel_list:
+        return bad_channels_one_d
 
-    # get the data from dut and tele for corresponding events (apply mask)
-    final_dut_data = single_TLU_data[mask_dut]
-    final_tele_data = single_track_data[mask_tele]
+    # create the matrices with the bad channels
+    matrices = []
+    for i in range(number_of_planes):
+        bad_channel_matrix = np.zeros((13,20))
 
-    # combine DUT and TELE data
-    final_dut_hit_data = final_dut_data.data
-    final_tele_fit_data = final_tele_data.data
-    # return final_dut_hit_data, final_tele_fit_data
-    merged = ak.zip({"hits":final_dut_hit_data, "tele":final_tele_fit_data},depth_limit=1)
+        # bad channels in the i'th plane
+        bad_channels_plane_i = bad_channels[bad_channels.plane_ID == i].channel_ID
 
-    return merged
+        # update the entries at the dead channels as 1
+        for ch in bad_channels_plane_i:
+            x = ch.X
+            y = ch.Y
+            bad_channel_matrix[-1-y][x] = 1
 
+        matrices.append(bad_channel_matrix)
 
+    # plot
+    # fig, axes = plt.subplots(2, 4, figsize=(16, 10))  # larger figure
+    fig, axes = plt.subplots(plots_rows, 4, figsize=(18, 12))  # larger figure
+    axes = axes.ravel()
 
+    # Generate pad numbering (13×20)
+    pad_numbers = np.arange(260).reshape(13, 20)
 
+    for idx, (ax, mat) in enumerate(zip(axes, matrices)):
+        
+        # Plot heatmap
+        seaborn.heatmap(
+            mat,
+            ax=ax,
+            cmap="coolwarm",
+            square=False,
+            annot = pad_numbers[::-1],   # write pad numbers
+            fmt="d",
+            cbar = False,
+            annot_kws={"size": 6},
+            linewidths=0.3,
+            linecolor="black"
+        )
 
+        # title for each plane
+        ax.set_title(f"Plane {idx}", fontsize=14)
 
+        # add the gap seperator
+        ax.axvline( x=12, color="white", linestyle="--", linewidth=1.2)
 
+        # X ticks (0–19)
+        ax.set_xticks(np.arange(20) + 0.5)
+        ax.set_xticklabels(np.arange(20), rotation = 55)
 
+        # Y ticks (0–12)
+        ax.set_yticks(np.arange(13) + 0.5)
+        ax.set_yticklabels(np.arange(12, -1, -1), rotation = 0)  # bottom = 0
 
-
-
-
-
-
-
-
-def gal_scope_merge(run_number):
-    import gc
-    import pandas as pd
-    f = uproot.open(f"TB_FIRE/TB_reco/TB_FIRE_{run_number}_raw_reco.root")
-    tele = uproot.open(f"TB_FIRE/TB_reco/run_{run_number}_telescope.root")
-
-    arrs_events = f["Hits"].arrays(["TLU_number", "amplitude", "plane_ID", "ch_ID"], library="ak")
-    tele_events = tele["TrackingInfo/Tracks"].arrays(["triggerid", "x_dut", "y_dut"], library="ak")
-
-    arrs_events.TLU_number
-
-    df_dut = pd.DataFrame({
-        "TLU": ak.to_list(np.sort(arrs_events.TLU_number)),
-        "amplitude": ak.to_list(arrs_events.amplitude),
-        "plane_ID": ak.to_list(arrs_events.plane_ID),
-        "ch_ID": ak.to_list(arrs_events.ch_ID)
-    })
-
-    nonempty_mask = (ak.num(tele_events["x_dut"]) == 1) & (ak.num(tele_events["y_dut"]) == 1)
+        if len(axes) > len(matrices):
+            axes[len(matrices)].set_visible(False)
     
-    tele_trig_filtered = tele_events["triggerid"][nonempty_mask]
-    tele_x_filtered    = tele_events["x_dut"][nonempty_mask]
-    tele_y_filtered    = tele_events["y_dut"][nonempty_mask]
+    fig.suptitle("Bad Channels (Red). Plane 0 is Closest to the Beam", fontsize = 20)
+    plt.tight_layout()
+    plt.show()
 
-    flat_triggers = ak.to_list(ak.flatten(tele_trig_filtered, axis=None))
-    flat_x       = ak.to_list(ak.flatten(tele_x_filtered, axis=None))
-    flat_y       = ak.to_list(ak.flatten(tele_y_filtered, axis=None))
+    return bad_channels_one_d
 
-    df_tele = pd.DataFrame({
-        "triggerid": np.sort(flat_triggers),
-        "x_dut": flat_x,
-        "y_dut": flat_y
-    })
-   
-    print("DataFrames constructed.")
+# # replace this with your path to the file and number of planes
+# path = "TB_FIRE\TB_reco\TB_FIRE_1340_raw_reco.root"
+# number_of_planes = 11
 
-    df_tele = df_tele[df_tele["triggerid"].isin(df_dut["TLU"])]
-    df_dut = df_dut[df_dut["TLU"].isin(df_tele["triggerid"])]
-    
-    # Group DUT hits by TLU
-    grouped_dut = df_dut.groupby("TLU", sort=False).agg({
-        "amplitude": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])],
-        "plane_ID": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])],
-        "ch_ID": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])]
-    }).reset_index()
-
-    # Group telescope hits by triggerid
-    grouped_tele = df_tele.groupby("triggerid", sort=False).agg({
-        "x_dut": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])],
-        "y_dut": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])]
-    }).reset_index().rename(columns={"triggerid": "TLU"})
-
-
-    print("DataFrames grouped by TLU/triggerid")
-    # Merge DUT and telescope on TLU
-    merged = pd.merge(grouped_dut, grouped_tele, on="TLU", how="left")
-
-    print("DataFrames merged")
-
-    del flat_triggers, flat_x, flat_y, df_dut, df_tele, grouped_dut, grouped_tele
-    gc.collect()
-
-    print("collected garbage")
-
-    events_awk = ak.zip({
-        "TLU": ak.Array(merged["TLU"].tolist()),
-        "Amplitudes": ak.Array(merged["amplitude"].tolist()),
-        "Planes": ak.Array(merged["plane_ID"].tolist()),
-        "Channels": ak.Array(merged["ch_ID"].tolist()),
-        "x_dut": ak.flatten(ak.Array(merged["x_dut"].tolist()),axis=1),
-        "y_dut": ak.flatten(ak.Array(merged["y_dut"].tolist()),axis=1)
-    })
-
-    return events_awk
-
-
-
+# channels_diagnostics(path, number_of_planes)
 
 
 
@@ -2113,117 +2068,8 @@ def single_column_energy_Gamma_fit(hit_data, Position, specific_Y = "all_rows", 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-"scope works"
-
-
-
-
-
-# filter chi2
-def filter_chi2_scope_data(hit_data_scope, upper_chi2_bound):
-    mask = hit_data_scope.tele.chired < upper_chi2_bound
-    filtered_data = hit_data_scope[ak.flatten(mask)]
-    filtered_data_clean = filtered_data[ak.num(filtered_data.tele) > 0]
-    return filtered_data_clean
-
-
-
-
-
-
-# show the average amp vs x position and perform gaussian + linear fit
-def gap_avg_eneregies_per_X_fit(hit_data_scope, y_min, y_max, x_min = "false", x_max = "false"):
-    y_max, y_min = 10, -10
-
-    data = hit_data_scope[(hit_data_scope.y < y_max) & (hit_data_scope.y > y_min)]
-    data = data[ak.num(data) > 0]
-
-    # compute X and E
-    X = -ak.to_numpy(ak.mean(data.x, axis=1))
-    X = np.round(X,1)
-    E = ak.sum(data.amp, axis=1)
-
-    # grouping
-    amp, mean, pos = rf.ak_groupby(X, E, round="false")
-    amp_avg = ak.mean(amp.data, axis=1)
-    amp_std = ak.std(amp.data, axis=1) / np.sqrt(ak.num(amp.data, axis=1) - 1)
-
-    # mask
-    if (x_min == "false") & (x_max == "false"):
-        mask = (pos > min(X)) & (pos < max(X))
-    else:
-        mask = (pos > x_min) & (pos < x_max)
-
-
-    # convert Awkward → Numpy
-    pos_m = ak.to_numpy(pos[mask])
-    amp_m = ak.to_numpy(amp_avg[mask])
-    err_m = ak.to_numpy(amp_std[mask])
-
-    # --- Gaussian model ---
-    def gaussian_linear(x, c, m, A, mu, sigma):
-        return c + m*x - A * np.exp(-(x - mu)**2 / (2 * sigma**2))
-
-    # initial guesses
-    c0 = 6000
-    m0 = 0
-    A0 = np.min(amp_m)
-    # A0 = np.max(amp_m)
-    # mu0 = pos_m[np.argmin(amp_m)]
-    mu0 = 0
-    sigma0 = 3
-    # sigma0 = (np.max(pos_m) - np.min(pos_m)) / 6
-
-    # fit
-    popt, pcov = curve_fit(gaussian_linear, pos_m, amp_m, p0=[c0, m0, A0, mu0, sigma0])
-    c_fit, m_fit, A_fit, mu_fit, sigma_fit = popt
-
-    print("Gaussian fit parameters:")
-    print(f"c     = {c_fit:.3f}")
-    print(f"m     = {m_fit:.3f}")
-    print(f"theta     = {np.arctan(m_fit):.3f} Radians")
-    print(f"A     = {A_fit:.3f}")
-    print(f"mu    = {mu_fit:.3f}")
-    print(f"sigma = {sigma_fit:.3f}")
-
-    # make smooth curve for plotting
-    x_fit = np.linspace(np.min(pos_m), np.max(pos_m), 500)
-    y_fit = gaussian_linear(x_fit, *popt)
-
-    # --- plotting ---
-    plt.errorbar(pos_m, amp_m, yerr=err_m, fmt='o', capsize=4, label="data")
-    plt.plot(x_fit, y_fit, 'r-', label="Gaussian fit", zorder=10)
-
-    plt.grid()
-    plt.xlabel("pos")
-    plt.ylabel("amplitude (avg ± std)")
-    plt.legend()
-    plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
 # reconstructed data for dead pads - returns an array with the reconstruccted value of the pad in each event
-def pads_reconstruct(hit_data,plane, channel, plot = False):
+def pads_reconstruct(hit_data,plane, channel, plot = False, yscale = "linear"):
 
     # get the data from previous plane
     previous_plane = hit_data[hit_data.plane == plane - 1]
@@ -2259,6 +2105,7 @@ def pads_reconstruct(hit_data,plane, channel, plot = False):
         plt.ylabel("Counts")
         plt.title("plane 4 ch 105 -Origin and reconstructed data, Z axis avg")
         # plt.yscale("log")
+        plt.yscale(yscale)
         plt.show()
 
     return reco_ch_data
