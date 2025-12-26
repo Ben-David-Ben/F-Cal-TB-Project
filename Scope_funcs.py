@@ -252,10 +252,81 @@ def filter_chi2_scope_data(hit_data_scope, upper_chi2_bound):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# colormap of the average showeer energy for its scope position
+def avg_energy_scope_colormap(data, x_borders="false", y_borders="false", cmap="tab20c", bins=300):
+
+    X_scope1 = ak.flatten(data.tele.x)
+    Y_scope1 = ak.flatten(data.tele.y)
+
+    X_scope = -ak.to_numpy(X_scope1)
+    Y_scope = ak.to_numpy(Y_scope1)
+
+    amp1 = ak.sum(data.hits.amp, axis = 1)
+    amp = ak.to_numpy(amp1)
+
+    # Histogram of SUM of amplitudes
+    sum_amp, xedges, yedges = np.histogram2d(X_scope, Y_scope, bins=bins, weights=amp)
+
+    # Histogram of COUNTS
+    counts, _, _ = np.histogram2d(X_scope, Y_scope, bins=[xedges, yedges])
+
+    # Avoid division by zero
+    avg_amp = np.divide(sum_amp, counts, out=np.zeros_like(sum_amp), where=counts > 0)
+
+    # Plot
+    plt.figure(figsize=(6,5))
+    plt.pcolormesh(xedges, yedges, avg_amp.T, cmap="tab20c")  
+    plt.colorbar(label="Average Amplitude")
+    plt.xlim(min(X_scope), max(X_scope))
+    plt.ylim(min(Y_scope), max(Y_scope))
+    
+    if x_borders != "false":
+        plt.xlim(-x_borders, x_borders)
+    if y_borders != "false":
+        plt.ylim(-y_borders, y_borders)
+    
+    plt.xlabel("x [mm]")
+    plt.ylabel("y [mm]")
+    plt.title("Average Shower Energy per Position")
+    plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "Gap"
 
 
-def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_max=-20):
+def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_max=20):
 
     # filter data by chi2
     hit_data_chi2 = sf.filter_chi2_scope_data(hit_data, chi2)
