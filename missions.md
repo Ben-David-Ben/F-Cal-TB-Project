@@ -8,6 +8,4 @@ Missions:
 
 - improve efficiency on the pads reconstruction(batchs, zip at the end)
 
-- get the E vs X to work with bins
-
-- get the E vs X for sgments of y
+- get the E vs X for sgments of y with corrected data
