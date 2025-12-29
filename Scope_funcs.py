@@ -326,7 +326,7 @@ def avg_energy_scope_colormap(data, x_borders="false", y_borders="false", cmap="
 "Gap"
 
 
-def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_max=20):
+def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_max=20, bin_size = 0.4):
 
     # filter data by chi2
     hit_data_chi2 = sf.filter_chi2_scope_data(hit_data, chi2)
@@ -338,10 +338,10 @@ def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_
 
 
     # compute X and E
-    X = -ak.to_numpy(ak.mean(data.tele.x, axis=1))
-    X = np.round(X,1)
+    X1 = -ak.to_numpy(ak.mean(data.tele.x, axis=1))
+    X = bin_size * np.round(X1 / bin_size)
     E = ak.sum(data.hits.amp, axis=1)
-    print(E)
+
 
     # grouping
     amp, mean, pos = rf.ak_groupby(X, E, round="false")

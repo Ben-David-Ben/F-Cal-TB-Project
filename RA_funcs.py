@@ -402,10 +402,13 @@ def plane_hit_counts(hit_data, plane):
 
 
 # a colormap with the AMOUNT OF HITS in every channel(pad) of a chosen plane
-def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin", save = False):
+def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin", save = False, inverse_plane_order=False):
     
     #  change index so that the first plane is 0 and last is 7
-    plane_number = 8 - plane_number
+    if inverse_plane_order:
+        plane_number = 8 - plane_number
+    else:
+        plane_number = plane_number-1
 
     # get only the hits on the wanted plane
     hits_plane_n = hit_data[hit_data.plane == plane_number]
@@ -426,14 +429,19 @@ def hits_amount_colormap_single_plane(hit_data, plane_number, cmap="berlin", sav
         r = pads_2d[1][i] # remainder of the i'th pad (column)
         counts_matrix[-1-q][r] = counts[i]
 
+    if inverse_plane_order:
+        plane_number = 8 - plane_number
+    else:
+        plane_number = plane_number+1
+    
     # creat the colormap
     ax = seaborn.heatmap(counts_matrix, cmap=cmap, linewidths=0.5, cbar_kws={'label': 'Hit Counts'})
-    plt.title(f'Number of Hits in each channel, plane {8 - plane_number} [XO]')
+    plt.title(f'Number of Hits in each channel, plane {plane_number} [XO]')
     plt.axvline(x=12, color='purple', linestyle='--', linewidth=1)
     ax.set_yticks(ax.get_yticks())
     ax.set_yticklabels(range(len(ax.get_yticks())-1, -1, -1))
     if save:
-        plt.savefig(r"Plots\TB2025 Gap\run 1080 reco" + "\\" + f"plane_{8-plane_number}_hits.png", dpi=300, bbox_inches="tight")
+        plt.savefig(r"Plots\TB2025 Gap\run 1080 reco" + "\\" + f"plane_{plane_number}_hits.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
@@ -2069,23 +2077,20 @@ def single_column_energy_Gamma_fit(hit_data, Position, specific_Y = "all_rows", 
 
 
 # reconstructed data for dead pads - returns an array with the reconstruccted value of the pad in each event
-"works!"
-def pads_reconstruct(hit_data,plane, channel, plot = False, yscale = "linear"):
+def pads_reconstruct(hit_data, plane, channel, plot = False, yscale = "linear"):
 
     # get the data from previous plane
     previous_plane = hit_data[hit_data.plane == plane - 1]
     prev_plane_same_ch = previous_plane[previous_plane.ch == channel]
-    prev_plane_same_ch_zeros = ak.where(ak.num(prev_plane_same_ch.amp) == 0, [[0]], prev_plane_same_ch.amp)
+    prev_plane_same_ch_zeros = ak.where(ak.num(prev_plane_same_ch.amp) != 1, [[0]], prev_plane_same_ch.amp)
 
     # get the data from plane 5
     next_plane = hit_data[hit_data.plane == plane + 1]
     next_plane_same_ch = next_plane[next_plane.ch == channel]
-    next_plane_same_ch_zeros = ak.where(ak.num(next_plane_same_ch.amp) == 0, [[0]], next_plane_same_ch.amp)
-
+    next_plane_same_ch_zeros = ak.where(ak.num(next_plane_same_ch.amp) != 1, [[0]], next_plane_same_ch.amp)
+    
     # average the data 
     reco_ch_data = (next_plane_same_ch_zeros + prev_plane_same_ch_zeros) / 2
-    # plane_4_ch_105_reco_null = reco_ch_data[reco_ch_data > 0]
-    # plane_4_ch_105_reco_clean = plane_4_ch_105_reco_null[ak.num(plane_4_ch_105_reco_null) > 0]
 
     if plot:
         # plot
@@ -2110,6 +2115,8 @@ def pads_reconstruct(hit_data,plane, channel, plot = False, yscale = "linear"):
         plt.show()
 
     return reco_ch_data
+
+
 
 
 
@@ -2210,14 +2217,14 @@ def reconstruct_data_all_dead_pads(data, radius, path_to_diagnostics, number_of_
     dead_channels_in_radius1 = all_dead_channels[radius_mask] 
 
     # delete dead channels starting at the first plane as we cant average for them
-    dead_channels_in_radius = dead_channels_in_radius1[dead_channels_in_radius1.plane_ID > 0]
+    dead_channels_in_radius = dead_channels_in_radius1[(dead_channels_in_radius1.plane_ID > 0) & (dead_channels_in_radius1.plane_ID < 7)]
 
 
 # add the reconstructed data
     counter = len(dead_channels_in_radius)
     for channel in dead_channels_in_radius:
-        data = add_reconstruct_data_single_dead_pad(data, channel.plane_ID, channel.channel_ID)
         print(channel)
+        data = rf.add_reconstruct_data_single_dead_pad(data, channel.plane_ID, channel.channel_ID)
         counter -= 1
         print(counter, "channels left")
     
