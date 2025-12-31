@@ -325,8 +325,7 @@ def avg_energy_scope_colormap(data, x_borders="false", y_borders="false", cmap="
 
 "Gap"
 
-
-def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_max=20, bin_size = 0.4):
+def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_max=20, bin_size = 0.4, return_param=False):
 
     # filter data by chi2
     hit_data_chi2 = sf.filter_chi2_scope_data(hit_data, chi2)
@@ -341,7 +340,6 @@ def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_
     X1 = -ak.to_numpy(ak.mean(data.tele.x, axis=1))
     X = bin_size * np.round(X1 / bin_size)
     E = ak.sum(data.hits.amp, axis=1)
-
 
     # grouping
     amp, mean, pos = rf.ak_groupby(X, E, round="false")
@@ -376,7 +374,21 @@ def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_
     # fit
     popt, pcov = curve_fit(gaussian_linear, pos_m, amp_m, p0=[c0, m0, A0, mu0, sigma0])
 
+    # fitted values
     c_fit, m_fit, A_fit, mu_fit, sigma_fit = popt
+    
+    # uncertainties
+    perr = np.sqrt(np.diag(pcov))  # 1-sigma uncertainties
+    c_err, m_err, A_err, mu_err, sigma_err = perr
+
+    # return the fitting results if needed
+    if return_param:
+        return popt, perr
+
+    # slope and uncertainty of the fitted function
+    theta_fit = np.arctan(m_fit)
+    theta_err = m_err / (1.0 + m_fit**2)
+
 
     print("Gaussian fit parameters:")
     print(f"c     = {c_fit:.3f}")
@@ -386,21 +398,43 @@ def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_
     print(f"mu    = {mu_fit:.3f}")
     print(f"sigma = {sigma_fit:.3f}")
 
-    # make smooth curve for plotting
+    fig, ax = plt.subplots()
+    ax.errorbar(pos_m, amp_m, yerr=err_m, fmt='.', capsize=4, label="data")
+
+    # make a smooth fitted function
     x_fit = np.linspace(np.min(pos_m), np.max(pos_m), 500)
     y_fit = gaussian_linear(x_fit, *popt)
+    ax.plot(x_fit, y_fit, 'r-', label="Gaussian fit", zorder=10)
 
-    # --- plotting ---
-    plt.errorbar(pos_m, amp_m, yerr=err_m, fmt='.', capsize=4, label="data")
-    plt.plot(x_fit, y_fit, 'r-', label="Gaussian fit", zorder=10)
-    print((gaussian_linear(-15, *popt) , gaussian_linear(150, *popt)))
+    # build textbox string
+    textstr = "\n".join([
+        r"$c = %.3f \pm %.3f$" % (c_fit, c_err),
+        r"$m = %.3f \pm %.3f$" % (m_fit, m_err),
+        r"$\theta = %.3f \pm %.3f$ rad" % (theta_fit, theta_err),
+        r"$A = %.3f \pm %.3f$" % (A_fit, A_err),
+        r"$\mu = %.3f \pm %.3f$" % (mu_fit, mu_err),
+        r"$\sigma = %.3f \pm %.3f$" % (sigma_fit, sigma_err),
+    ])
 
-    plt.grid()
-    plt.xlabel("pos")
-    plt.ylabel("amplitude (avg ± std)")
-    plt.legend()
+    # add textbox (axes coordinates: 0..1)
+    ax.text(
+        0.65, 0.98, textstr,
+        transform=ax.transAxes,
+        fontsize=10,
+        verticalalignment="top",
+        bbox=dict(boxstyle="round,pad=0.4", facecolor="pink", alpha=0.8, edgecolor="0.5")
+    )
+
+    ax.grid(True)
+    ax.set_xlabel("X Scope")
+    ax.set_ylabel("Energy [ADC] (avg ± std)")
+    # ax.set_title(r"Average Energy vs Scope X Position \n Fit to $y = m \cdot x + c - A\cdot e^{\frac{-(x - \mu)^2}{(2 \sigma^2)}}$")
+    ax.set_title("Average Energy vs Scope X Position\n"
+             r"Fit to: $y = m \cdot x + c - A\cdot exp(\frac{-(x - \mu)^2}{2 \sigma^2})$")
+
+    ax.legend(loc="upper left")
+    # leg = ax.legend(loc="upper right", title=textstr, frameon=True)
     plt.show()
-
 
 
 

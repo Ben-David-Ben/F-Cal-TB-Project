@@ -9,3 +9,9 @@ Missions:
 - improve efficiency on the pads reconstruction(batchs, zip at the end)
 
 - get the E vs X for sgments of y with corrected data
+
+- correct mps per pad
+
+- smulaton
+
+- chec for problematc tlu n 10eght1
