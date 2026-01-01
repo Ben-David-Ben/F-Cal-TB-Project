@@ -222,7 +222,48 @@ def gal_scope_merge(run_number):
 
 
 
+# # find differrence between ben's and gal's merging
+# tlu_ben = ak.firsts(hit_data_scope_1081_tlu.hits.TLU, axis = 1) 
+# tlu_gal = ak.firsts(gal_scope_1081.TLU)
+# gal_in_ben_mask = np.isin(tlu_gal,tlu_ben)
+# tlu_gal_in_ben = tlu_gal[~gal_in_ben_mask]
 
+# gal_ben_1081_scope = gal_scope_1081[~gal_in_ben_mask]
+
+# gal_ben_1081_scope = gal_scope_1081[~gal_in_ben_mask]
+# X_gal1 = ak.mean(gal_ben_1081_scope.x_dut, axis=1)
+# Y_gal1 = ak.mean(gal_ben_1081_scope.y_dut, axis=1)
+
+# X_gal = -ak.to_numpy(X_gal1)
+# Y_gal = ak.to_numpy(Y_gal1)
+
+# amp_gal1 = ak.sum(gal_ben_1081_scope.Amplitudes, axis=1)
+# amp_gal = ak.to_numpy(amp_gal1)
+
+# # Define bins
+# bins = 100
+
+# # Histogram of SUM of amplitudes
+# sum_amp, xedges, yedges = np.histogram2d(X_gal, Y_gal, bins=bins, weights=amp_gal)
+
+# # Histogram of COUNTS
+# counts, _, _ = np.histogram2d(X_gal, Y_gal, bins=[xedges, yedges])
+
+# # Avoid division by zero
+# avg_amp = np.divide(sum_amp, counts, out=np.zeros_like(sum_amp), where=counts > 0)
+
+# # Plot
+# plt.figure(figsize=(6,5))
+# plt.pcolormesh(xedges, yedges, avg_amp.T, cmap="tab20c")  
+# plt.colorbar(label="Average Amplitude")
+# plt.xlim(min(X_gal), max(X_gal))
+# # plt.xlim(-30, 30)
+# plt.ylim(min(Y_gal), max(Y_gal))
+# # plt.ylim(-30, 20)
+# plt.xlabel("x")
+# plt.ylabel("y")
+# plt.title("2D Histogram of Average Amplitude - run 1081, Gal")
+# plt.show()
 
 
 
@@ -325,6 +366,80 @@ def avg_energy_scope_colormap(data, x_borders="false", y_borders="false", cmap="
 
 "Gap"
 
+
+
+
+
+
+
+
+
+
+
+
+# plots the XY distribution of events that started in the wanted pads
+def pads_xy(data, central_pad):
+
+    # determine the chosen pads
+    base = list(range(central_pad - 2, central_pad + 3))
+    pads = base + list(map(lambda x: x + 20, base)) + list(map(lambda x: x - 20, base))
+    print(pads)
+
+    # data from the first plane only
+    first_plane_mask = data.hits.plane == 0
+    first_plane_data = data.hits[first_plane_mask]
+    
+    # events with single hit in first plane
+    single_hit_mask = ak.num(first_plane_data) == 1
+    single_hit_first_plane_data = data[single_hit_mask] 
+
+    # data from the first plane with single hit
+    first_plane_single_hit = first_plane_data[single_hit_mask]
+
+    # get events that starts at the chosen pads
+    chosen_pads_mask = np.isin(first_plane_single_hit.ch, pads)
+    chosen_pads_data = single_hit_first_plane_data[chosen_pads_mask]
+
+    # chosen pads data
+    chosen_pads = chosen_pads_data.hits.ch
+
+    # get the xy data for each
+    x = -chosen_pads_data.tele.x
+    y = chosen_pads_data.tele.y
+
+   
+   
+    # plot xy by color
+    unique_pads = np.unique(chosen_pads)
+    pad_to_idx = {p: i for i, p in enumerate(unique_pads)}
+    color_idx = np.array([pad_to_idx[p] for p in chosen_pads])
+
+    plt.scatter(x, y, c=color_idx, cmap='tab20', s=0.05)
+    plt.colorbar(ticks=np.arange(len(unique_pads)),label='pad').set_ticklabels(unique_pads)
+    plt.title("XY Pads Distribution")
+    plt.show()
+
+    return chosen_pads_data
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# plots the energy profile vs the x axis and fits to gaussian
 def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_max=20, bin_size = 0.4, return_param=False):
 
     # filter data by chi2
@@ -390,6 +505,22 @@ def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_
     theta_err = m_err / (1.0 + m_fit**2)
 
 
+    # chi2
+    residuals = amp_m - gaussian_linear(pos_m, *popt)
+
+    # avoid division by zero if any std are 0
+    mask_err = err_m > 0
+    chi2_val = np.sum((residuals[mask_err] / err_m[mask_err])**2)
+
+    # number of points used in chi2
+    N = np.sum(mask_err)
+    
+    # number of fit params (c, m, A, mu, sigma) = 5
+    p = len(popt)
+    ndof = N - p
+    chi2_ndof = chi2_val / ndof if ndof > 0 else np.nan
+
+
     print("Gaussian fit parameters:")
     print(f"c     = {c_fit:.3f}")
     print(f"m     = {m_fit:.3f}")
@@ -398,6 +529,8 @@ def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_
     print(f"mu    = {mu_fit:.3f}")
     print(f"sigma = {sigma_fit:.3f}")
 
+
+    # plot
     fig, ax = plt.subplots()
     ax.errorbar(pos_m, amp_m, yerr=err_m, fmt='.', capsize=4, label="data")
 
@@ -408,6 +541,7 @@ def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_
 
     # build textbox string
     textstr = "\n".join([
+        r"$\chi^2/\mathrm{ndof} = %.2f$" % chi2_ndof,
         r"$c = %.3f \pm %.3f$" % (c_fit, c_err),
         r"$m = %.3f \pm %.3f$" % (m_fit, m_err),
         r"$\theta = %.3f \pm %.3f$ rad" % (theta_fit, theta_err),
@@ -418,7 +552,7 @@ def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_
 
     # add textbox (axes coordinates: 0..1)
     ax.text(
-        0.65, 0.98, textstr,
+        0.65, 0.36, textstr,
         transform=ax.transAxes,
         fontsize=10,
         verticalalignment="top",
@@ -459,48 +593,70 @@ def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_
 
 
 
+    # plots the gap parameters for different sections of y on the shower
+def plot_gap_vs_y(scope_data, y_range=10, y_bins=1, chi2=1):
 
-# plots the XY distribution of events that started in the wanted pads
-def pads_xy(data, central_pad):
+    # lists for the plotting
+    c_list = []
+    c_err_list = []
+    A_list = []
+    A_err_list = []
+    mu_list = []
+    mu_err_list = []
+    sigma_list = []
+    sigma_err_list = []
+    y_list = []
 
-    # determine the chosen pads
-    base = list(range(central_pad - 2, central_pad + 3))
-    pads = base + list(map(lambda x: x + 20, base)) + list(map(lambda x: x - 20, base))
-    print(pads)
+    for i in np.arange(-y_range, y_range, y_bins):
 
-    # data from the first plane only
-    first_plane_mask = data.hits.plane == 0
-    first_plane_data = data.hits[first_plane_mask]
-    
-    # events with single hit in first plane
-    single_hit_mask = ak.num(first_plane_data) == 1
-    single_hit_first_plane_data = data[single_hit_mask] 
+        # get the gaussian parameters for each y
+        popt, perr = E_vs_X_scope_gaussian_fit(scope_data, chi2, i, i+y_bins, -13, 14, bin_size=0.04, return_param=True)
+        c, m, A, mu, sigma = popt
+        c_err, m_err, A_err, mu_err, sigma_err = perr
+        
+        y = i + y_bins/2
+        y_list.append(y)
 
-    # data from the first plane with single hit
-    first_plane_single_hit = first_plane_data[single_hit_mask]
+        # save the data
+        c_list.append(c)
+        c_err_list.append(c_err)
+        A_list.append(A)
+        A_err_list.append(A_err)
+        mu_list.append(mu)
+        mu_err_list.append(mu_err)
+        sigma_list.append(sigma)
+        sigma_err_list.append(sigma_err)
 
-    # get events that starts at the chosen pads
-    chosen_pads_mask = np.isin(first_plane_single_hit.ch, pads)
-    chosen_pads_data = single_hit_first_plane_data[chosen_pads_mask]
 
-    # chosen pads data
-    chosen_pads = chosen_pads_data.hits.ch
+    # plot the parameters
+    fig, axs = plt.subplots(2, 2, figsize=(10, 6), constrained_layout=True)
 
-    # get the xy data for each
-    x = -chosen_pads_data.tele.x
-    y = chosen_pads_data.tele.y
+    linewdith = 1
+    markersize = 3
 
-   
-   
-    # plot xy by color
-    unique_pads = np.unique(chosen_pads)
-    pad_to_idx = {p: i for i, p in enumerate(unique_pads)}
-    color_idx = np.array([pad_to_idx[p] for p in chosen_pads])
+    # plot C
+    axs[0,0].errorbar(y_list, c_list, yerr=c_err_list, fmt='.', capsize=4, label="data")
+    axs[0, 0].set_title("Average Energy Outside the Gap (c)")
+    axs[0,0].set_ylabel("Energy Count [ADC]")
 
-    plt.scatter(x, y, c=color_idx, cmap='tab20', s=0.05)
-    plt.colorbar(ticks=np.arange(len(unique_pads)),label='pad').set_ticklabels(unique_pads)
-    plt.title("XY Pads Distribution")
+    # plot A
+    axs[0,1].errorbar(y_list, A_list, yerr=A_err_list, fmt='.', color="red", capsize=4, label="data")
+    axs[0, 1].set_title("Energy Inside the Gap (Gaussian Depth - A)")
+    axs[0,1].set_ylabel("Energy Count Inside the Gap [ADC]")
+
+    # plot gaussian mean (mu)
+    axs[1,0].errorbar(y_list, mu_list, yerr=mu_err_list, fmt='.', color="purple", capsize=4, label="data")
+    axs[1, 0].set_title("Gap Position on the scope (mu)")
+    axs[1,0].set_ylabel("Gap Position [mm]")
+
+    # plot gaussian width (sigma)
+    axs[1,1].errorbar(y_list, sigma_list, yerr=sigma_err_list, fmt='.', color="green", capsize=4, label="data")
+    axs[1, 1].set_title("Gap width (sigma)")
+    axs[1,1].set_ylabel("sigma [mm]")
+
+    for ax in axs.ravel():
+        ax.grid(True, alpha=0.3)
+        ax.set_xlabel("y")
+        ax.tick_params(axis="x", labelleft=True)
+
     plt.show()
-
-    return chosen_pads_data
-    
