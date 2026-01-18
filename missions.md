@@ -1,17 +1,15 @@
 Missions:
 
-- ask michal about the runs at the end of the shower, use variance addition to connect them
+- simulation
 
-- see why the data in 1081 in different for me and for gal
+- calibration values
 
-- gap length
+- gap ~ 1.7
 
-- improve efficiency on the pads reconstruction(batchs, zip at the end)
+- NN pad corrections
 
-- get the E vs X for sgments of y with corrected data
+- try to find the geometry swallowed by the gap
 
-- correct mps per pad
+- sensor efficency with the tracker mode
 
-- smulaton
-
-- chec for problematc tlu n 10eght1
+- check the amount of non zero data for both tele and hits in aligned files

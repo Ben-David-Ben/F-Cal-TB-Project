@@ -131,6 +131,69 @@ def DUT_TELE_merge(run_number, return_TLU = False):
 
 
 
+# Translates aligned data to zipped awkward array
+def get_ROOT_data_zip_Aligned(run_number, return_TLU=False):
+
+    
+    file_name = f'TB_FIRE\TB_reco\TB2025_Run_{run_number}_aligned.root'
+    
+    # open the file
+    infile = uproot.open(file_name)
+    # print("Folders:", infile.keys())
+
+
+    # open the first "folder" hits
+    hits = infile['HitTracks']
+    # print("Hits:")
+    # hits.show()
+
+    # create the arrays from all data
+    
+    # Hits
+    amp = hits['amplitude'].array()
+    plane = hits['plane_ID'].array()
+    channel = hits['ch_ID'].array()
+    TLU = hits['TLU_number'].array()
+
+    if return_TLU:
+        hit_data = ak.zip({"TLU":TLU, "plane":plane, "ch":channel, "amp":amp})
+    else:
+        hit_data = ak.zip({"plane":plane, "ch":channel, "amp":amp})
+
+    # Scope
+    chi2_ndof = hits['chi2_track'].array() / hits['ndof_track'].array()
+    x = hits['x_sensor'].array()
+    y = hits['y_sensor'].array()
+    # track_id = hits['trackid'].array()
+    tele_data = ak.zip({"x":x, "y":y, "chired":chi2_ndof})
+
+    # create a zipped array of data for every hit(reading in the sensor)
+    data1 = ak.zip({"hits":hit_data, "tele":tele_data},depth_limit=1)
+
+    # take only events where the hits and scope are non zero
+    mask_tele = ak.num(tele_data) == 1
+    mask_hit = ak.num(hit_data) > 0
+
+    data = data1[mask_tele & mask_hit]
+    # return mask_tele, mask_hit, data
+
+    return data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -277,9 +340,10 @@ def gal_scope_merge(run_number):
 
 
 # filter chi2
-def filter_chi2_scope_data(hit_data_scope, upper_chi2_bound):
-    mask = hit_data_scope.tele.chired < upper_chi2_bound
-    filtered_data = hit_data_scope[ak.flatten(mask)]
+def filter_chi2_scope_data(hit_data_scope, lower_chi2_bound, upper_chi2_bound):
+    mask_lower = hit_data_scope.tele.chired > lower_chi2_bound
+    mask_upper = hit_data_scope.tele.chired < upper_chi2_bound
+    filtered_data = hit_data_scope[ak.flatten(mask_lower) & ak.flatten(mask_upper)]
     filtered_data_clean = filtered_data[ak.num(filtered_data.tele) > 0]
     return filtered_data_clean
 
@@ -300,7 +364,7 @@ def filter_chi2_scope_data(hit_data_scope, upper_chi2_bound):
 
 
 
-
+"Analysis"
 
 
 
