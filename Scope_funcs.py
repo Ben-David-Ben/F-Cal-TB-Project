@@ -190,6 +190,55 @@ def get_ROOT_data_zip_Aligned(run_number, return_TLU=False):
 
 
 
+# Translates Synchronized (matching TLU W/O alignment) data to zipped awkward array
+def get_ROOT_data_zip_Synchronized(run_number, return_TLU=False):
+
+    
+    file_name = f'TB_FIRE\TB_reco\TB2025_Run_{run_number}.root'
+    
+    # open the file
+    infile = uproot.open(file_name)
+    # print("Folders:", infile.keys())
+
+
+    # open the first "folder" hits
+    hits = infile['HitTracks']
+    # print("Hits:")
+    # hits.show()
+
+    # create the arrays from all data
+    
+    # Hits
+    amp = hits['amplitude'].array()
+    plane = hits['plane_ID'].array()
+    channel = hits['ch_ID'].array()
+    TLU = hits['TLU_number'].array()
+
+    if return_TLU:
+        hit_data = ak.zip({"TLU":TLU, "plane":plane, "ch":channel, "amp":amp})
+    else:
+        hit_data = ak.zip({"plane":plane, "ch":channel, "amp":amp})
+
+    # Scope
+    chi2_ndof = hits['chi2_track'].array() / hits['ndof_track'].array()
+    x = hits['x_dut'].array()
+    y = hits['y_dut'].array()
+    # track_id = hits['trackid'].array()
+    tele_data = ak.zip({"x":x, "y":y, "chired":chi2_ndof})
+
+    # create a zipped array of data for every hit(reading in the sensor)
+    data1 = ak.zip({"hits":hit_data, "tele":tele_data},depth_limit=1)
+
+    # take only events where the hits and scope are non zero
+    mask_tele = ak.num(tele_data) == 1
+    mask_hit = ak.num(hit_data) > 0
+
+    data = data1[mask_tele & mask_hit]
+    # return mask_tele, mask_hit, data
+
+    return data
+
+
 
 
 
