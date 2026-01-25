@@ -13,3 +13,5 @@ Missions:
 - sensor efficency with the tracker mode
 
 - check the amount of non zero data for both tele and hits in aligned files
+
+- dystance between x_sensor and x_scope
