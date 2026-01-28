@@ -1,5 +1,9 @@
 __pycache__
 
+venv_2026/
+
+.DS_Store
+
 TB_FIRE_1101_hits.root
 
 TB_FIRE_1096_hits.root

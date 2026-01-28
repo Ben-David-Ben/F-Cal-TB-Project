@@ -135,7 +135,7 @@ def DUT_TELE_merge(run_number, return_TLU = False):
 def get_ROOT_data_zip_Aligned(run_number, return_TLU=False):
 
     
-    file_name = f'TB_FIRE\TB_reco\TB2025_Run_{run_number}_aligned.root'
+    file_name = f'TB_FIRE/TB_reco/TB2025_Run_{run_number}_aligned.root'
     
     # open the file
     infile = uproot.open(file_name)

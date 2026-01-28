@@ -6,12 +6,14 @@ Missions:
 
 - gap ~ 1.7
 
-- NN pad corrections
+- NN pad corrections - dystance between x_sensor and x_scope
 
-- try to find the geometry swallowed by the gap
 
-- sensor efficency with the tracker mode
+"pad edges"
+- organize the plots of the sigmoid width for left and right
 
-- check the amount of non zero data for both tele and hits in aligned files
+- plot the widths for top and bottom of the pad as well (y axis)
 
-- dystance between x_sensor and x_scope
+-organize the plots of the inner and outer gap
+
+- plot neighboring pads outside the gap
