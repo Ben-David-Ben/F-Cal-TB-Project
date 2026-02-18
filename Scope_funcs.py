@@ -422,8 +422,109 @@ def filter_chi2_scope_data(hit_data_scope, lower_chi2_bound, upper_chi2_bound):
 
 
 
+
+
+
+
+
+
+    # edges of the pads in the sensor
+def pads_to_xy_gridlines(pad_number, pitch=5.53):
+    "returns the coordinates of the edges of a pad, pitch is the size of the pad"
+
+    # convert pad number to row and column position
+    row = pad_number // 20
+    col = pad_number % 20
+
+    # convert the row col to l(tower index) m(x) n(y) coordinates
+    l = 1 if col >= 12 else 0
+    m = 4 + col - (16 * l)
+    n = 3 + row
+
+    # convert (l,m,n) to xy of pad center on the sensor
+    x_center = -(86.575 - (5.53 * m) - (90.2 * l))
+    y_center = -41.475 + (5.53 * n)
+    
+    # get the line of the pads edges
+    x_left = round(x_center - pitch / 2, 6)  # Left edge
+    x_right = round(x_center + pitch / 2, 6)  # Right edge
+    y_left = round(y_center - pitch / 2, 6)  # Bottom edge
+    y_right = round(y_center + pitch / 2, 6)  # Top edge
+
+    x_lines = [x_left,x_right]
+    y_lines = [y_left,y_right]
+
+    return x_lines, y_lines
+
+
+
+def multiple_pad_edges_gridlines(pad_list):
+    "returns a list of the coordinates of all x and y edges of the pads"
+
+    # change int to list on case given a single pad
+    if type(pad_list) == int:
+        pad_list = [pad_list]
+    
+    # get the borders for each pad into a list
+    x_lines_list = []
+    y_lines_list = []
+    for pad in pad_list:
+        # edges of the pad
+        x_lines_pad, y_lines_pad = pads_to_xy_gridlines(pad)
+        # add left and right edges to the list
+        x_lines_list.append(x_lines_pad[0]) # left edge
+        x_lines_list.append(x_lines_pad[1]) # right edge
+        y_lines_list.append(y_lines_pad[0]) # left edge
+        y_lines_list.append(y_lines_pad[1]) # right edge
+
+    # discard duplicate values
+    x_lines = np.unique(x_lines_list)
+    y_lines = np.unique(y_lines_list)
+
+    return x_lines, y_lines
+
+
+
+
+
+
+
+
+
+
+def get_shower_center_in_dut_coordinates(data):
+    "given some run data, this returns the coordinates of the "
+    "pad with the highest amount of hits in the first plane"
+
+    # single hit in the first plane
+    first_plane1 = data.hits[data.hits.plane == 0]
+    first_plane = first_plane1[ak.num(first_plane1) == 1]
+
+    # ch activated in the first plane
+    first_plane_ch = first_plane.ch
+
+    # define center of the shower as the most activated pad in the first plane 
+    counted_channels, counts = np.unique(ak.flatten(first_plane_ch), axis=0, return_counts=True)
+    imax = np.argmax(counts)
+    central_pad = counted_channels[imax]
+    print("shower center:", central_pad)
+
+    # get the pad number in sensor coordinates
+    central_pad_sensor = ak.mean(sf.pads_to_xy_gridlines(central_pad), axis=1)
+    print("shower center in sensor coordinates:", central_pad_sensor)
+
+    return central_pad_sensor
+
+
+
+
+
+
+
+
+
 # colormap of the average showeer energy for its scope position
-def avg_energy_scope_colormap(data, x_borders="false", y_borders="false", cmap="tab20c", bins=300):
+def avg_energy_scope_colormap(data, plane=False, x_borders=25, y_borders=25, x_shift=0, y_shift=0, cmap="tab20c", bins=300, pad=True, channels_borders = "all"):
 
     X_scope1 = ak.flatten(data.tele.x)
     Y_scope1 = ak.flatten(data.tele.y)
@@ -431,11 +532,29 @@ def avg_energy_scope_colormap(data, x_borders="false", y_borders="false", cmap="
     X_scope = -ak.to_numpy(X_scope1)
     Y_scope = ak.to_numpy(Y_scope1)
 
-    amp1 = ak.sum(data.hits.amp, axis = 1)
+    if plane:
+        if pad:
+            amp1 = ak.sum(data.hits.amp[data.hits.plane == plane], axis = 1)
+        if pad != True:
+            print(amp1)
+            amp1 = ak.sum(data.hits.amp[(data.hits.plane == plane) & (data.hits.ch == pad)], axis =1)
+        
+    else:
+        amp1 = ak.sum(data.hits.amp, axis = 1)
+
+    # amp1 = ak.sum(data.hits.amp, axis = 1)
     amp = ak.to_numpy(amp1)
 
     # Histogram of SUM of amplitudes
     sum_amp, xedges, yedges = np.histogram2d(X_scope, Y_scope, bins=bins, weights=amp)
+
+    # shower center
+    xcent = 0.5 * (xedges[:-1] + xedges[1:])
+    ycent = 0.5 * (yedges[:-1] + yedges[1:])
+    H = sum_amp  # shape (Nx, Ny)
+    total = H.sum()
+    x_center = (H.sum(axis=1) * xcent).sum() / total   # sum over x first -> per-y weights
+    y_center = (H.sum(axis=0) * ycent).sum() / total   # sum over x first -> per-y weights
 
     # Histogram of COUNTS
     counts, _, _ = np.histogram2d(X_scope, Y_scope, bins=[xedges, yedges])
@@ -445,25 +564,33 @@ def avg_energy_scope_colormap(data, x_borders="false", y_borders="false", cmap="
 
     # Plot
     plt.figure(figsize=(6,5))
-    plt.pcolormesh(xedges, yedges, avg_amp.T, cmap="tab20c")  
+    plt.pcolormesh(xedges, yedges, avg_amp.T, cmap=cmap)  
     plt.colorbar(label="Average Amplitude")
     plt.xlim(min(X_scope), max(X_scope))
     plt.ylim(min(Y_scope), max(Y_scope))
-    
-    if x_borders != "false":
-        plt.xlim(-x_borders, x_borders)
-    if y_borders != "false":
-        plt.ylim(-y_borders, y_borders)
+
+    if channels_borders == "all":
+        pads_list = np.arange(0,256,1)
+
+    # draw vertical lines of the pad edges
+    x_lines, _ = multiple_pad_edges_gridlines(pads_list)
+    [plt.axvline(x, color='black', linestyle='--', linewidth=0.5, label=f"pad {pad} edge") for x in x_lines]
+    _, y_lines = multiple_pad_edges_gridlines(pads_list)
+    [plt.axhline(y, color='black', linestyle='--', linewidth=0.5, label=f"pad {pad} edge") for y in y_lines]
+
+    # shift the center of the plot if needed
+    x_center, y_center = (x_center + x_shift), (y_center + y_shift)
+
+    plt.xlim(x_center - x_borders, x_center + x_borders)
+    plt.ylim(y_center - y_borders, y_center + y_borders)
     
     plt.xlabel("x [mm]")
     plt.ylabel("y [mm]")
-    plt.title("Average Shower Energy per Position")
+    # plt.title(f"Average Shower Energy per Position, pad = {pad}")
+    plt.title(f"Average Shower Energy per Position")
     plt.show()
 
-
-
-
-
+    return x_center, y_center
 
 
 
