@@ -17,9 +17,6 @@ print("imports work")
 
 "Merging"
 
-
-
-
 # a function that get 2 arrays, and groups them by categories of the first 1, returns the grouped data and the classes(categories)
 def ak_groupby_for_scope(classes, data):
     
@@ -524,7 +521,7 @@ def get_shower_center_in_dut_coordinates(data):
 
 
 # colormap of the average showeer energy for its scope position
-def avg_energy_scope_colormap(data, plane=False, x_borders=25, y_borders=25, x_shift=0, y_shift=0, cmap="tab20c", bins=300, pad=True, channels_borders = "all"):
+def avg_energy_scope_colormap(data, plane=False, x_borders=25, y_borders=25, x_shift=0, y_shift=0, cmap="tab20c", bins=300, pad=True, channels_borders = "all", amp_thresh=False):
 
     X_scope1 = ak.flatten(data.tele.x)
     Y_scope1 = ak.flatten(data.tele.y)
@@ -562,8 +559,13 @@ def avg_energy_scope_colormap(data, plane=False, x_borders=25, y_borders=25, x_s
     # Avoid division by zero
     avg_amp = np.divide(sum_amp, counts, out=np.zeros_like(sum_amp), where=counts > 0)
 
+    # set maximal threshold of the energies
+    if amp_thresh:
+        avg_amp = np.where(avg_amp > amp_thresh, 0, avg_amp)
+
     # Plot
-    plt.figure(figsize=(6,5))
+    # plt.figure(figsize=(6,5))
+    plt.figure()
     plt.pcolormesh(xedges, yedges, avg_amp.T, cmap=cmap)  
     plt.colorbar(label="Average Amplitude")
     plt.xlim(min(X_scope), max(X_scope))
