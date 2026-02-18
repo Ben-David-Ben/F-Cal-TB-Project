@@ -2,6 +2,10 @@ __pycache__
 
 venv_2026/
 
+venv_312/
+
+training_data_neighbors
+
 .DS_Store
 
 TB_FIRE_1101_hits.root
