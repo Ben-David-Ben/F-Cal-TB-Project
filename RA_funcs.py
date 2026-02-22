@@ -763,9 +763,10 @@ def average_amp_vs_plane(hit_data):
 
     # total amount of events in the run(TLU's)
     events = len(hit_data)
+    print('event number:', events)
 
     # list of planes
-    planes = np.arange(1,9,1)
+    planes = np.arange(1,9)
 
     # create a list of total energy(amp) for each plane
     plane_avg_amp_list = []
@@ -773,10 +774,10 @@ def average_amp_vs_plane(hit_data):
     plane_hits_amount_list = []
 
     # get the amp for each plane
-    for plane in range(7,-1,-1):
+    for plane in planes:
     
         # get only the hits on the wanted plane
-        hits_plane_n = hit_data[hit_data.plane == plane]
+        hits_plane_n = hit_data[hit_data.plane == plane-1]
         hits_plane_n_amp = hits_plane_n.amp
         clean_plane_n_amp = hits_plane_n_amp[ak.num(hits_plane_n_amp) > 0]
 
@@ -793,14 +794,15 @@ def average_amp_vs_plane(hit_data):
 
         # total amount of hits in each plane
         plane_hits_amount_list.append(len(ak.flatten(clean_plane_n_amp)))
-        print(f"amount of hits in plane {7 - plane}:", len(clean_plane_n_amp))
+        # print(f"amount of hits in plane {plane}:", len(ak.flatten(clean_plane_n_amp)))
+        
 
     # plot
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
 
     # plot the averages for each plane
-    ax1.plot(planes, run_avg_amp_list, marker='o', label = "AMP over events in the run")
-    ax1.plot(planes, plane_avg_amp_list, marker='v', label = "AMP over hits in plane")
+    ax1.plot(planes, run_avg_amp_list, marker='o', label = "AMP over total events in the run")
+    ax1.plot(planes, plane_avg_amp_list, marker='v', label = "AMP over events in plane only")
     ax1.set_xlabel('Plane [XO]')
     ax1.set_ylabel('AVG AMP')
     ax1.set_title('AMP/total events for each plane')
@@ -2079,6 +2081,7 @@ def single_column_energy_Gamma_fit(hit_data, Position, specific_Y = "all_rows", 
 
 
 "the following 3 functions work for the pad reconstruction, try to add the data in batches and create the zipped arrays only in the end"
+"pad correction"
 
 
 
@@ -2189,7 +2192,6 @@ def add_reconstruct_data_single_dead_pad(data, plane, pad, scope_data = True):
 
 
 
-"works!"
 # reconstruct the dead channels around the shower in a run - radius of reco dtermines the distance from the center of the shower to be reconstructed
 def reconstruct_data_all_dead_pads(data, radius, path_to_diagnostics, number_of_planes = 8):
 
@@ -2237,3 +2239,119 @@ def reconstruct_data_all_dead_pads(data, radius, path_to_diagnostics, number_of_
     
     
     return data
+
+
+
+
+
+
+
+
+
+
+
+def create_pad_corrected_data(run_number, correction_radius=6, aligned=True, calibrate=False):
+    """creates a file in the TB_FIRE/Pad_Corrected_Data with the zipped data after z avg pad correction"""
+
+    title = f"TB_FIRE/Pad_Corrected_Data/run_{run_number}_pad_corrected.parquet"
+
+    # call the data
+    if aligned:
+        data_scope = sf.get_ROOT_data_zip_Aligned(run_number)
+    else:
+        data_scope = sf.DUT_TELE_merge(run_number)
+
+    if calibrate:
+        data_scope = rf.convert_amp_to_MIP(data_scope)
+        title = f"TB_FIRE/Pad_Corrected_Data/cal_run_{run_number}_pad_corrected.parquet"
+
+
+    # create the corrected data
+    path = f"TB_FIRE/TB_reco/TB_FIRE_{run_number}_raw_reco_diagnostics.root"
+    data_scope_corrected = rf.reconstruct_data_all_dead_pads(data_scope, correction_radius, path)
+
+    # Save to a file
+    ak.to_parquet(data_scope_corrected, title)
+
+    return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"Calibrations"
+def get_calibration_factors(path_to_calibration_file):
+    """Returns a 2D NumPy array serving as a lookup table for factors"""
+    cal_data = np.loadtxt(path_to_calibration_file)
+    
+    # Extract columns
+    cal_ch = cal_data[:, 0].astype(int)
+    cal_plane = cal_data[:, 1].astype(int)
+    mpv = cal_data[:, 5]
+
+    # Calculate factors: 1/MPV if MPV > 0, else 0
+    # This prevents division by zero and sets unsuccessful cals to 0
+    cal_facs = np.divide(1.0, mpv, out=np.zeros_like(mpv), where=mpv != 0)
+
+    # Create a 2D lookup table: [plane][channel]
+    # max plane is 10 and max channel is 255
+    lookup_table = np.zeros((11, 256)) 
+    lookup_table[cal_plane, cal_ch] = cal_facs
+
+    return lookup_table
+
+
+
+def convert_amp_to_MIP(data, number_of_planes=8):
+    """takes aligned or synchronized zipped data and calibrates the amp to MIP"""
+
+    path_to_calibration_file = "CalibrationFactors.txt"
+
+    # 1. take the arrays from zipped file
+    hits = data.hits
+    planes, channels, amp = hits.plane, hits.ch, hits.amp
+
+    # 2. table with the calibration for each plane and pad
+    lookup_table = get_calibration_factors(path_to_calibration_file)
+
+    # 3. Shift the plane IDs to match calibration logic
+    # (e.g., if 8 planes config, shift hit planes to match cal_plane 3-10)
+    cal_planes_to_use = planes + 11 - number_of_planes
+
+    # 4. match the calibration factor for each amp
+    # - flatten the jagged arrays to use as indices for the NumPy lookup table
+    flat_planes = ak.flatten(cal_planes_to_use).to_numpy().astype(int)
+    flat_channels = ak.flatten(channels).to_numpy().astype(int)
+    
+    # - Get the factors for each plane and channel in 1d list
+    flat_factors = lookup_table[flat_planes, flat_channels]
+
+    # 5. Apply factors and restore jagged structure
+    # Use ak.unflatten convert the 1d factors to jagged array in the shape of amp
+    hits_per_event = ak.num(amp)
+    cal_factors_jagged = ak.unflatten(flat_factors, hits_per_event)
+    cal_amp = amp * cal_factors_jagged
+
+    # 6. zip the hits and scope with the calibrated amplitudes
+    tele = data.tele
+    cal_hits = ak.zip({"plane":planes, "ch":channels, "amp":cal_amp})
+
+
+    cal_data = ak.zip({"hits":cal_hits, "tele":tele},depth_limit=1)
+
+    return cal_data
