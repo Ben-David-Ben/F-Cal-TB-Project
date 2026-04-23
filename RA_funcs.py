@@ -10,6 +10,7 @@ from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 from scipy.special import gamma
 import Scope_funcs as sf
+import re
 
 
 
@@ -2251,7 +2252,8 @@ def reconstruct_data_all_dead_pads(data, radius, path_to_diagnostics, number_of_
 
 
 def create_pad_corrected_data(run_number, correction_radius=6, aligned=True, calibrate=False):
-    """creates a file in the TB_FIRE/Pad_Corrected_Data with the zipped data after z avg pad correction"""
+    """creates a file with the zipped data after z avg pad reconstruction
+    correction radius is the readius around the center of the beam that is corrected"""
 
     title = f"TB_FIRE/Pad_Corrected_Data/run_{run_number}_pad_corrected.parquet"
 
@@ -2295,6 +2297,11 @@ def create_pad_corrected_data(run_number, correction_radius=6, aligned=True, cal
 
 
 "Calibrations"
+
+
+
+# WITHOUT taking avg calibration factor from asic
+
 def get_calibration_factors(path_to_calibration_file):
     """Returns a 2D NumPy array serving as a lookup table for factors"""
     cal_data = np.loadtxt(path_to_calibration_file)
@@ -2317,6 +2324,10 @@ def get_calibration_factors(path_to_calibration_file):
 
 
 
+
+
+
+
 def convert_amp_to_MIP(data, number_of_planes=8):
     """takes aligned or synchronized zipped data and calibrates the amp to MIP"""
 
@@ -2329,6 +2340,180 @@ def convert_amp_to_MIP(data, number_of_planes=8):
     # 2. table with the calibration for each plane and pad
     lookup_table = get_calibration_factors(path_to_calibration_file)
 
+    # 3. Shift the plane IDs to match calibration logic
+    # (e.g., if 8 planes config, shift hit planes to match cal_plane 3-10)
+    cal_planes_to_use = planes + 11 - number_of_planes
+
+    # 4. match the calibration factor for each amp
+    # - flatten the jagged arrays to use as indices for the NumPy lookup table
+    flat_planes = ak.flatten(cal_planes_to_use).to_numpy().astype(int)
+    flat_channels = ak.flatten(channels).to_numpy().astype(int)
+    
+    # - Get the factors for each plane and channel in 1d list
+    flat_factors = lookup_table[flat_planes, flat_channels]
+
+    # 5. Apply factors and restore jagged structure
+    # Use ak.unflatten convert the 1d factors to jagged array in the shape of amp
+    hits_per_event = ak.num(amp)
+    cal_factors_jagged = ak.unflatten(flat_factors, hits_per_event)
+    cal_amp = amp * cal_factors_jagged
+
+    # 6. zip the hits and scope with the calibrated amplitudes
+    tele = data.tele
+    cal_hits = ak.zip({"plane":planes, "ch":channels, "amp":cal_amp})
+
+
+    cal_data = ak.zip({"hits":cal_hits, "tele":tele},depth_limit=1)
+
+    return cal_data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# WITH taking avg calibration factor from asic
+
+def get_calibration_factors_with_plane_and_A_averaging(path_to_calibration_file, channel_to_A, return_group_avg=False):
+    """
+    Returns a 2D NumPy array serving as a lookup table for calibration factors.
+
+    For pads with failed calibration (MPV <= 0), replaces with the average MPV
+    of all successful calibrations in the same plane AND with the same A-value.
+
+    If all MPVs in a given (plane, A) group are failed/zero, they are left as 0.
+    """
+
+    cal_data = np.loadtxt(path_to_calibration_file)
+
+    # Extract columns
+    cal_ch = cal_data[:, 0].astype(int)
+    cal_plane = cal_data[:, 1].astype(int)
+    mpv = cal_data[:, 5].copy()
+
+    # Get A-value for each channel
+    A_values = np.array([channel_to_A.get(ch, -1) for ch in cal_ch])
+
+    # Compute averages for each (plane, A) group, excluding failed MPVs
+    unique_planes = np.unique(cal_plane)
+    unique_A_values = np.unique(A_values)
+
+    group_averages = {}
+
+    for plane in unique_planes:
+        for A in unique_A_values:
+            group_mask = (cal_plane == plane) & (A_values == A)
+            group_mpvs = mpv[group_mask]
+
+            if len(group_mpvs) == 0:
+                continue
+
+            non_zero_mpvs = group_mpvs[group_mpvs > 0]
+
+            n_total = len(group_mpvs)
+            n_zero = np.sum(group_mpvs <= 0)
+
+            if len(non_zero_mpvs) > 0:
+                avg_mpv = np.mean(non_zero_mpvs)
+                group_averages[(plane, A)] = avg_mpv
+
+    if return_group_avg:
+        return group_averages
+    
+    # Replace failed MPVs only if a valid group average exists
+    n_replaced = 0
+    n_left_zero = 0
+
+    for i in range(len(mpv)):
+        if mpv[i] <= 0:
+            key = (cal_plane[i], A_values[i])
+            if key in group_averages:
+                mpv[i] = group_averages[key]
+                n_replaced += 1
+            else:
+                # keep it at 0 if the whole (plane, A) group failed
+                mpv[i] = 0
+                n_left_zero += 1
+
+    print(f"✅ Replaced {n_replaced} failed calibrations with plane+A averages")
+    print(f"⚠️ Left {n_left_zero} failed calibrations at 0 because their whole group was failed")
+
+    # Convert to calibration factors safely
+    cal_facs = np.zeros_like(mpv)
+    valid_mask = mpv > 0
+    cal_facs[valid_mask] = 1.0 / mpv[valid_mask]
+
+    # Create lookup table
+    lookup_table = np.zeros((11, 256))
+    lookup_table[cal_plane, cal_ch] = cal_facs
+
+    return lookup_table
+
+
+
+
+
+
+
+
+
+
+def load_channel_to_A_from_header(path_to_header):
+    """
+    Parse ChannelMap.h and return a dict: channel -> A-value
+    Expects entries like:
+        {2, {0, 17}}
+    """
+    with open(path_to_header, "r") as f:
+        text = f.read()
+
+    pattern = r'\{\s*(\d+)\s*,\s*\{\s*(\d+)\s*,\s*(\d+)\s*\}\s*\}'
+    matches = re.findall(pattern, text)
+
+    channel_to_A = {}
+    for ch_str, A_str, _ in matches:
+        ch = int(ch_str)
+        A = int(A_str)
+        channel_to_A[ch] = A
+
+    return channel_to_A
+
+
+
+
+
+
+
+
+
+
+def convert_amp_to_MIP_asic_avg(data, number_of_planes=8):
+    """takes aligned or synchronized zipped data and calibrates the amp to MIP
+    using the avg mpv in the asic as cal factor for unsucceful calibrations"""
+
+    path_to_calibration_file = "CalibrationFactors.txt"
+
+    # 1. take the arrays from zipped file
+    hits = data.hits
+    planes, channels, amp = hits.plane, hits.ch, hits.amp
+
+    # 2. table with the calibration for each plane and pad
+    channel_to_A = load_channel_to_A_from_header("ChannelMap.h")
+    lookup_table = get_calibration_factors_with_plane_and_A_averaging(path_to_calibration_file,channel_to_A)
+    
     # 3. Shift the plane IDs to match calibration logic
     # (e.g., if 8 planes config, shift hit planes to match cal_plane 3-10)
     cal_planes_to_use = planes + 11 - number_of_planes

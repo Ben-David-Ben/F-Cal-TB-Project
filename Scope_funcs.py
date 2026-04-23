@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pylab as plt
 import uproot
@@ -8,6 +9,7 @@ from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 from scipy.special import gamma
 import Scope_funcs as sf
+PROJECT_ROOT = os.path.abspath(os.path.join(os.getcwd(), '..'))
 print("imports work")
 
 
@@ -129,14 +131,19 @@ def DUT_TELE_merge(run_number, return_TLU = False):
 
 
 # Translates aligned data to zipped awkward array
-def get_ROOT_data_zip_Aligned(run_number, return_TLU=False):
+def get_ROOT_data_zip_Aligned(run_number, return_TLU=False, return_P=False):
+
+    file_name = f'TB_FIRE/TB_reco/TB2025_Run_{run_number}_aligned.root'
 
     
-    file_name = f'TB_FIRE/TB_reco/TB2025_Run_{run_number}_aligned.root'
-    
     # open the file
-    infile = uproot.open(file_name)
-    # print("Folders:", infile.keys())
+    try:
+        infile = uproot.open(file_name)
+    # if the script is in a child directory within F-CAL-TB dir
+    except:
+        infile = uproot.open(os.path.join(PROJECT_ROOT, file_name))
+
+    
 
 
     # open the first "folder" hits
@@ -150,19 +157,34 @@ def get_ROOT_data_zip_Aligned(run_number, return_TLU=False):
     amp = hits['amplitude'].array()
     plane = hits['plane_ID'].array()
     channel = hits['ch_ID'].array()
-    TLU = hits['TLU_number'].array()
 
     if return_TLU:
+        TLU = hits['TLU_number'].array()
         hit_data = ak.zip({"TLU":TLU, "plane":plane, "ch":channel, "amp":amp})
     else:
         hit_data = ak.zip({"plane":plane, "ch":channel, "amp":amp})
 
     # Scope
+    try:
+        x = hits['x_sensor'].array()
+        y = hits['y_sensor'].array()
+    except:
+        x = hits['x_dut'].array()
+        y = hits['y_dut'].array()
+    
     chi2_ndof = hits['chi2_track'].array() / hits['ndof_track'].array()
-    x = hits['x_sensor'].array()
-    y = hits['y_sensor'].array()
-    # track_id = hits['trackid'].array()
-    tele_data = ak.zip({"x":x, "y":y, "chired":chi2_ndof})
+        
+    # zip the scope data
+
+    if return_P:
+        px = hits['px_dut'].array()
+        py = hits['py_dut'].array()
+        pz = hits['pz_dut'].array()
+    
+        tele_data = ak.zip({"x":x, "y":y, "chired":chi2_ndof, "px":px, "py":py, "pz":pz})
+    
+    else:
+        tele_data = ak.zip({"x":x, "y":y, "chired":chi2_ndof})
 
     # create a zipped array of data for every hit(reading in the sensor)
     data1 = ak.zip({"hits":hit_data, "tele":tele_data},depth_limit=1)
@@ -187,15 +209,32 @@ def get_ROOT_data_zip_Aligned(run_number, return_TLU=False):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Translates Synchronized (matching TLU W/O alignment) data to zipped awkward array
 def get_ROOT_data_zip_Synchronized(run_number, return_TLU=False):
 
     
     file_name = f'TB_FIRE\TB_reco\TB2025_Run_{run_number}.root'
     
+    
     # open the file
-    infile = uproot.open(file_name)
-    # print("Folders:", infile.keys())
+    try:
+        infile = uproot.open(file_name)
+    # if the script is in a child directory within F-CAL-TB dir
+    except:
+        infile = uproot.open(os.path.join(PROJECT_ROOT, file_name))
 
 
     # open the first "folder" hits
@@ -245,134 +284,6 @@ def get_ROOT_data_zip_Synchronized(run_number, return_TLU=False):
 
 
 
-
-
-
-
-
-
-# gal's merging
-def gal_scope_merge(run_number):
-    import gc
-    import pandas as pd
-    f = uproot.open(f"TB_FIRE/TB_reco/TB_FIRE_{run_number}_raw_reco.root")
-    tele = uproot.open(f"TB_FIRE/TB_reco/run_{run_number}_telescope.root")
-
-    arrs_events = f["Hits"].arrays(["TLU_number", "amplitude", "plane_ID", "ch_ID"], library="ak")
-    tele_events = tele["TrackingInfo/Tracks"].arrays(["triggerid", "x_dut", "y_dut"], library="ak")
-
-    arrs_events.TLU_number
-
-    df_dut = pd.DataFrame({
-        "TLU": ak.to_list(np.sort(arrs_events.TLU_number)),
-        "amplitude": ak.to_list(arrs_events.amplitude),
-        "plane_ID": ak.to_list(arrs_events.plane_ID),
-        "ch_ID": ak.to_list(arrs_events.ch_ID)
-    })
-
-    nonempty_mask = (ak.num(tele_events["x_dut"]) == 1) & (ak.num(tele_events["y_dut"]) == 1)
-    
-    tele_trig_filtered = tele_events["triggerid"][nonempty_mask]
-    tele_x_filtered    = tele_events["x_dut"][nonempty_mask]
-    tele_y_filtered    = tele_events["y_dut"][nonempty_mask]
-
-    flat_triggers = ak.to_list(ak.flatten(tele_trig_filtered, axis=None))
-    flat_x       = ak.to_list(ak.flatten(tele_x_filtered, axis=None))
-    flat_y       = ak.to_list(ak.flatten(tele_y_filtered, axis=None))
-
-    df_tele = pd.DataFrame({
-        "triggerid": np.sort(flat_triggers),
-        "x_dut": flat_x,
-        "y_dut": flat_y
-    })
-   
-    print("DataFrames constructed.")
-
-    df_tele = df_tele[df_tele["triggerid"].isin(df_dut["TLU"])]
-    df_dut = df_dut[df_dut["TLU"].isin(df_tele["triggerid"])]
-    
-    # Group DUT hits by TLU
-    grouped_dut = df_dut.groupby("TLU", sort=False).agg({
-        "amplitude": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])],
-        "plane_ID": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])],
-        "ch_ID": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])]
-    }).reset_index()
-
-    # Group telescope hits by triggerid
-    grouped_tele = df_tele.groupby("triggerid", sort=False).agg({
-        "x_dut": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])],
-        "y_dut": lambda s: [item for sublist in s for item in (sublist if isinstance(sublist, list) else [sublist])]
-    }).reset_index().rename(columns={"triggerid": "TLU"})
-
-
-    print("DataFrames grouped by TLU/triggerid")
-    # Merge DUT and telescope on TLU
-    merged = pd.merge(grouped_dut, grouped_tele, on="TLU", how="left")
-
-    print("DataFrames merged")
-
-    del flat_triggers, flat_x, flat_y, df_dut, df_tele, grouped_dut, grouped_tele
-    gc.collect()
-
-    print("collected garbage")
-
-    events_awk = ak.zip({
-        "TLU": ak.Array(merged["TLU"].tolist()),
-        "Amplitudes": ak.Array(merged["amplitude"].tolist()),
-        "Planes": ak.Array(merged["plane_ID"].tolist()),
-        "Channels": ak.Array(merged["ch_ID"].tolist()),
-        "x_dut": ak.flatten(ak.Array(merged["x_dut"].tolist()),axis=1),
-        "y_dut": ak.flatten(ak.Array(merged["y_dut"].tolist()),axis=1)
-    })
-
-    return events_awk
-
-
-
-
-
-# # find differrence between ben's and gal's merging
-# tlu_ben = ak.firsts(hit_data_scope_1081_tlu.hits.TLU, axis = 1) 
-# tlu_gal = ak.firsts(gal_scope_1081.TLU)
-# gal_in_ben_mask = np.isin(tlu_gal,tlu_ben)
-# tlu_gal_in_ben = tlu_gal[~gal_in_ben_mask]
-
-# gal_ben_1081_scope = gal_scope_1081[~gal_in_ben_mask]
-
-# gal_ben_1081_scope = gal_scope_1081[~gal_in_ben_mask]
-# X_gal1 = ak.mean(gal_ben_1081_scope.x_dut, axis=1)
-# Y_gal1 = ak.mean(gal_ben_1081_scope.y_dut, axis=1)
-
-# X_gal = -ak.to_numpy(X_gal1)
-# Y_gal = ak.to_numpy(Y_gal1)
-
-# amp_gal1 = ak.sum(gal_ben_1081_scope.Amplitudes, axis=1)
-# amp_gal = ak.to_numpy(amp_gal1)
-
-# # Define bins
-# bins = 100
-
-# # Histogram of SUM of amplitudes
-# sum_amp, xedges, yedges = np.histogram2d(X_gal, Y_gal, bins=bins, weights=amp_gal)
-
-# # Histogram of COUNTS
-# counts, _, _ = np.histogram2d(X_gal, Y_gal, bins=[xedges, yedges])
-
-# # Avoid division by zero
-# avg_amp = np.divide(sum_amp, counts, out=np.zeros_like(sum_amp), where=counts > 0)
-
-# # Plot
-# plt.figure(figsize=(6,5))
-# plt.pcolormesh(xedges, yedges, avg_amp.T, cmap="tab20c")  
-# plt.colorbar(label="Average Amplitude")
-# plt.xlim(min(X_gal), max(X_gal))
-# # plt.xlim(-30, 30)
-# plt.ylim(min(Y_gal), max(Y_gal))
-# # plt.ylim(-30, 20)
-# plt.xlabel("x")
-# plt.ylabel("y")
-# plt.title("2D Histogram of Average Amplitude - run 1081, Gal")
-# plt.show()
 
 
 
@@ -455,6 +366,12 @@ def pads_to_xy_gridlines(pad_number, pitch=5.53):
 
 
 
+
+
+
+
+
+
 def multiple_pad_edges_gridlines(pad_list):
     "returns a list of the coordinates of all x and y edges of the pads"
 
@@ -511,6 +428,10 @@ def get_shower_center_in_dut_coordinates(data):
     print("shower center in sensor coordinates:", central_pad_sensor)
 
     return central_pad_sensor
+
+
+
+
 
 
 
@@ -835,7 +756,7 @@ def E_vs_X_scope_gaussian_fit(hit_data, chi2, y_min=-10, y_max=10, x_min=-20, x_
 
 
 
-    # plots the gap parameters for different sections of y on the shower
+# plots the gap parameters for different sections of y on the shower
 def plot_gap_vs_y(scope_data, y_range=10, y_bins=1, chi2=1):
 
     # lists for the plotting
