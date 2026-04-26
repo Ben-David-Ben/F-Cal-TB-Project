@@ -1,19 +1,16 @@
 "# F-Cal-TB-Project" 
 
-First step is introduction to UPROOT which is a library to read and process files in "ROOT" language by CERN.
-We will be processing the data also using the "awkward" library which is helpful for many math actions such as dealing with non linear arrays (i.e arrays that cannot be written in the form of an NxM matrix)
+
+This repository includes all my analysis on the ecal-p testbeam in 2025 in DESY. My main work included analysis of the signal around the gap between towers and I will detail here the scripts and work I did on each section. for further explanation about my work please refer to the pdf file "Impact of the towers Gap TB 2025" on this repo.
+
+1. Signal loss of a shower around the gap:
+
+For this, open the script "TB2025_Gap_scope_analysis.ipynb" there you can find plots of:
+- signal distribution of showers depending on their starting position
+- average signal of a shower vs initial X position, fit to supergaussian function to analyze the loss in the Gap
+- average signal in a specific plane vs initial X
+- Loss of signal per plane
 
 
-ROOT FILE:
-for each run we have a ROOT file with the ttree. In it we have all the events categorized and the parameters for them.
-
-Each event is marked with a TLU number (this is like an index)
-
-For each TLU(event) we have corresponding arrays - showing which pads(pixle) were activated, on which planes, and with what amplitudes(energy). 
-
-Hence for every event we have 1 TLU number and arrays of all the hits.
-
-deepest layer is numbered as 0 and goes up as we go to the first layers
-
-! when taking the values of a TB run for a specific plane, it gives an array of the same size of the total events number, with empty slots where we dont have any hits in the wanted plane.
+2. Pad geometry:
 
